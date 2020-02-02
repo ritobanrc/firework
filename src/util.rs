@@ -1,5 +1,5 @@
-use crate::{WIDTH, HEIGHT};
 use crate::ray::Ray;
+use crate::{HEIGHT, WIDTH};
 use ultraviolet::Vec3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -14,14 +14,13 @@ impl From<Color> for u32 {
 impl From<Vec3> for Color {
     /// Creates a `Color` from 3 rgb float values in the range 0..1
     fn from(c: Vec3) -> Color {
-        Color (
-             (c.x * 255.99) as u8,
-             (c.y * 255.99) as u8,
-             (c.z * 255.99) as u8,
+        Color(
+            (c.x * 255.99) as u8,
+            (c.y * 255.99) as u8,
+            (c.z * 255.99) as u8,
         )
     }
 }
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Coord(usize, usize);
@@ -41,14 +40,3 @@ impl Into<(f32, f32)> for Coord {
         (self.0 as f32 / WIDTH as f32, self.1 as f32 / HEIGHT as f32)
     }
 }
-
-const SKY_BLUE: Vec3 = Vec3 { x: 0.5, y: 0.7, z: 1.0 };
-const SKY_WHITE: Vec3 = Vec3 { x: 1., y: 1., z: 1. };
-
-pub fn sky_color(r: &Ray) -> Vec3 {
-    let dir = r.direction().normalized();
-    // Take the y (from -1 to +1) and map it to 0..1
-    let t = 0.5*(dir.y + 1.0);
-    (1.-t) * SKY_WHITE + t * SKY_BLUE
-}
-
