@@ -17,8 +17,8 @@ mod drawing;
 mod ray;
 mod util;
 
-const WIDTH: usize = 1280;
-const HEIGHT: usize = 720;
+const WIDTH: usize = 1920;
+const HEIGHT: usize = 1080;
 
 const SAMPLES: usize = 100;
 
@@ -46,13 +46,13 @@ fn main() -> Result<()> {
     world.list_mut().push(Box::new(Sphere::new(
         Vec3::new(1., 0., -1.),
         0.5,
-        Rc::new(MetalMat::new(Vec3::new(0.8, 0.6, 0.2))),
+        Rc::new(MetalMat::new(Vec3::new(0.8, 0.6, 0.2), 1.0)),
     )));
 
     world.list_mut().push(Box::new(Sphere::new(
         Vec3::new(-1., 0., -1.),
         0.5,
-        Rc::new(MetalMat::new(Vec3::new(0.8, 0.8, 0.8))),
+        Rc::new(MetalMat::new(Vec3::new(0.8, 0.8, 0.8), 0.3)),
     )));
 
     let start = time::Instant::now();

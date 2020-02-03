@@ -170,18 +170,19 @@ impl Material for LambertianMat {
 
 pub struct MetalMat {
     albedo: Vec3,
+    roughness: f32,
 }
 
 impl MetalMat {
-    pub fn new(albedo: Vec3) -> MetalMat {
-        MetalMat { albedo }
+    pub fn new(albedo: Vec3, roughness: f32) -> MetalMat {
+        MetalMat { albedo, roughness }
     }
 }
 
 impl Material for MetalMat {
-    fn scatter(&self, r_in: &Ray, hit: &Hit, _rand: &mut LcRng) -> Option<ScatterResult> {
+    fn scatter(&self, r_in: &Ray, hit: &Hit, rand: &mut LcRng) -> Option<ScatterResult> {
         let reflected = reflect(r_in.direction(), &hit.normal);
-        let scattered = Ray::new(hit.point, reflected);
+        let scattered = Ray::new(hit.point, reflected + self.roughness * random_in_unit_sphere(rand));
         let attenuation = self.albedo;
         if scattered.direction().dot(hit.normal) > 0. {
             Some(ScatterResult {
