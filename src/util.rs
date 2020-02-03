@@ -62,3 +62,20 @@ pub(crate) fn random_in_unit_sphere(rng: &mut impl Rand) -> Vec3 {
 pub(crate) fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
     *v - 2. * v.dot(*n) * *n
 }
+
+pub(crate) fn refract(v: &Vec3, n: &Vec3, ni_over_nt: f32) -> Option<Vec3> {
+    let uv = v.normalized();
+    let dt = uv.dot(*n);
+    let disc = 1. - ni_over_nt * ni_over_nt * (1. - dt * dt);
+    if disc > 0. {
+        Some(ni_over_nt * (uv - *n * dt) - *n * disc.sqrt())
+    } else {
+        None
+    }
+}
+
+pub(crate) fn schlick(cosine: f32, ref_idx: f32) -> f32 {
+    let r0 = (1. - ref_idx) / (1. + ref_idx);
+    let r0 = r0 * r0;
+    r0 + (1. - r0) * (1. - cosine).powf(5.)
+}
