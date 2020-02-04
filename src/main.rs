@@ -9,6 +9,7 @@ use image::{save_buffer_with_format, ColorType, ImageFormat};
 use minifb::{Key, Window, WindowOptions};
 use rayon::prelude::*;
 use std::rc::Rc;
+use std::sync::Arc;
 use std::time;
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::Vec3;
@@ -18,8 +19,8 @@ mod drawing;
 mod ray;
 mod util;
 
-const WIDTH: usize = 480;
-const HEIGHT: usize = 270;
+const WIDTH: usize = 960;
+const HEIGHT: usize = 540;
 
 const SAMPLES: usize = 100;
 
@@ -28,7 +29,7 @@ fn main() -> Result<()> {
     let seed: u64 = 0;
     let mut rng = LcRng::new(seed);
 
-    let camera = Camera::new(Vec3::zero(), 4.);
+    let camera = Camera::new(Vec3::new(-2., 2., 1.), Vec3::new(0., 0., -1.), Vec3::unit_y(), 60.0);
 
     let mut world = HitableList::new();
 
@@ -37,19 +38,16 @@ fn main() -> Result<()> {
         0.5,
         Rc::new(LambertianMat::new(Vec3::new(0.3, 0.8, 0.3))),
     )));
-
     world.list_mut().push(Box::new(Sphere::new(
         Vec3::new(0., -100.5, -1.),
         100.,
         Rc::new(LambertianMat::new(Vec3::new(0.8, 0.5, 0.8))),
     )));
-
     world.list_mut().push(Box::new(Sphere::new(
         Vec3::new(1., 0., -1.),
         0.5,
         Rc::new(MetalMat::new(Vec3::new(0.8, 0.6, 0.2), 1.0)),
     )));
-
     world.list_mut().push(Box::new(Sphere::new(
         Vec3::new(-1., 0., -1.),
         0.45,
