@@ -1,6 +1,7 @@
 use crate::{HEIGHT, WIDTH};
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
+use crate::drawing::HitableList;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Color(u8, u8, u8);
@@ -59,6 +60,15 @@ pub(crate) fn random_in_unit_sphere(rng: &mut impl Rand) -> Vec3 {
     }
 }
 
+pub(crate) fn random_in_unit_disk(rng: &mut impl Rand) -> Vec3 {
+    loop {
+        let p = 2.0 * Vec3::new(rng.rand_f32(), rng.rand_f32(), 0.) - Vec3::new(1., 1., 0.);
+        if p.dot(p) < 1. {
+            return p;
+        }
+    }
+}
+
 pub(crate) fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
     *v - 2. * v.dot(*n) * *n
 }
@@ -78,4 +88,14 @@ pub(crate) fn schlick(cosine: f32, ref_idx: f32) -> f32 {
     let r0 = (1. - ref_idx) / (1. + ref_idx);
     let r0 = r0 * r0;
     r0 + (1. - r0) * (1. - cosine).powf(5.)
+}
+
+pub trait InRange {
+    fn in_range(self, begin: Self, end: Self) -> bool;
+}
+
+impl InRange for f32 {
+    fn in_range(self, begin: f32, end: f32) -> bool {
+        self >= begin && self < end
+    }
 }

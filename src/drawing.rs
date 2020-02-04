@@ -24,7 +24,7 @@ fn sky_color(r: &Ray) -> Vec3 {
 
 pub fn color(r: &Ray, world: &HitableList, depth: usize, rand: &mut LcRng) -> Vec3 {
     if let Some(hit) = world.hit(r, 0.001, 2e9) {
-        if depth < 50 {
+        if depth < 4 {
             if let Some(result) = hit.material.as_ref().scatter(r, &hit, rand) {
                 result.attenuation * color(&result.scattered, world, depth + 1, rand)
             } else {
