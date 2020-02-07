@@ -1,7 +1,7 @@
+use crate::drawing::HitableList;
 use crate::{HEIGHT, WIDTH};
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
-use crate::drawing::HitableList;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Color(u8, u8, u8);

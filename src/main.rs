@@ -1,7 +1,6 @@
 #![feature(array_value_iter)]
 #![feature(exclusive_range_pattern)]
 
-
 use crate::camera::Camera;
 use crate::drawing::{color, DielectricMat, HitableList, LambertianMat, MetalMat, Sphere};
 use crate::ray::Ray;
@@ -9,7 +8,7 @@ use crate::util::*;
 use anyhow::Result;
 use image::{save_buffer_with_format, ColorType, ImageFormat};
 use minifb::{Key, Window, WindowOptions};
-//use rayon::prelude::*;
+use rayon::prelude::*;
 use std::rc::Rc;
 use std::time;
 use tiny_rng::{LcRng, Rand};
@@ -20,11 +19,10 @@ mod drawing;
 mod ray;
 mod util;
 
-const WIDTH: usize = 1920;
-const HEIGHT: usize = 1080;
+const WIDTH: usize = 480;
+const HEIGHT: usize = 270;
 
 const SAMPLES: usize = 100;
-
 
 pub fn random_scene(rand: &mut impl Rand) -> HitableList {
     let mut world = HitableList::new();
@@ -32,73 +30,99 @@ pub fn random_scene(rand: &mut impl Rand) -> HitableList {
     world.list_mut().push(Box::new(Sphere::new(
         Vec3::new(0., -1001., -1.),
         1000.,
-        Rc::new(LambertianMat::new(Vec3::new(0.5, 0.5, 0.5))),
+        Box::new(LambertianMat::new(Vec3::new(0.5, 0.5, 0.5))),
     )));
 
     for x in -11..11 {
         for y in -11..11 {
-            let center = Vec3::new(x as f32 + 0.9*rand.rand_f32(), 0.2, y as f32 + 0.9*rand.rand_f32());
+            let center = Vec3::new(
+                x as f32 + 0.9 * rand.rand_f32(),
+                0.2,
+                y as f32 + 0.9 * rand.rand_f32(),
+            );
             if (center - Vec3::new(4., 0.2, 0.9)).mag() > 0.9 {
                 match rand.rand_f32() {
                     x if x.in_range(0.0, 0.8) => {
                         world.list_mut().push(Box::new(Sphere::new(
-                                    center,
-                                    0.2,
-                                    Rc::new(LambertianMat::new(Vec3::new(rand.rand_f32()*rand.rand_f32(), rand.rand_f32()*rand.rand_f32(), rand.rand_f32()*rand.rand_f32())))
-                                )));
-                    },
+                            center,
+                            0.2,
+                            Box::new(LambertianMat::new(Vec3::new(
+                                rand.rand_f32() * rand.rand_f32(),
+                                rand.rand_f32() * rand.rand_f32(),
+                                rand.rand_f32() * rand.rand_f32(),
+                            ))),
+                        )));
+                    }
                     x if x.in_range(0.8, 0.95) => {
                         world.list_mut().push(Box::new(Sphere::new(
-                                    center,
-                                    0.2,
-                                    Rc::new(MetalMat::new(Vec3::new(0.5 * (1. + rand.rand_f32()), 0.5 * (1. + rand.rand_f32()), 0.5 * (1. + rand.rand_f32())), 0.5 * rand.rand_f32()))
-                                    )));
-                    },
+                            center,
+                            0.2,
+                            Box::new(MetalMat::new(
+                                Vec3::new(
+                                    0.5 * (1. + rand.rand_f32()),
+                                    0.5 * (1. + rand.rand_f32()),
+                                    0.5 * (1. + rand.rand_f32()),
+                                ),
+                                0.5 * rand.rand_f32(),
+                            )),
+                        )));
+                    }
                     x if x.in_range(0.95, 1.) => {
                         world.list_mut().push(Box::new(Sphere::new(
-                                    center,
-                                    0.2,
-                                    Rc::new(DielectricMat::new(1.5))
-                                    )));
-                    },
-                    _ => { unreachable!() }
+                            center,
+                            0.2,
+                            Box::new(DielectricMat::new(1.5)),
+                        )));
+                    }
+                    _ => unreachable!(),
                 }
             }
         }
     }
 
     world.list_mut().push(Box::new(Sphere::new(
-                Vec3::new(0., 1., 0.),
-                1.0,
-                Rc::new(DielectricMat::new(1.5))
-                )));
+        Vec3::new(0., 1., 0.),
+        1.0,
+        Box::new(DielectricMat::new(1.5)),
+    )));
     world.list_mut().push(Box::new(Sphere::new(
-                Vec3::new(-4., 1., 0.),
-                1.0,
-                Rc::new(LambertianMat::new(Vec3::new(0.4, 0.2, 0.1)))
-                )));
+        Vec3::new(-4., 1., 0.),
+        1.0,
+        Box::new(LambertianMat::new(Vec3::new(0.4, 0.2, 0.1))),
+    )));
     world.list_mut().push(Box::new(Sphere::new(
-                Vec3::new(4., 1., 0.),
-                1.0,
-                Rc::new(MetalMat::new(Vec3::new(0.7, 0.6, 0.5), 0.0))
-                )));
+        Vec3::new(4., 1., 0.),
+        1.0,
+        Box::new(MetalMat::new(Vec3::new(0.7, 0.6, 0.5), 0.0)),
+    )));
 
     world
 }
 
 fn main() -> Result<()> {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
-    let seed: u64 = 0;
-    let mut rng = LcRng::new(seed);
 
     let cam_pos = Vec3::new(13., 2., 3.);
     let look_at = Vec3::new(0., 0., 0.);
-    let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 20.0, 0.1, (cam_pos - look_at).mag());
+    let camera = Camera::new(
+        cam_pos,
+        look_at,
+        Vec3::unit_y(),
+        20.0,
+        0.1,
+        (cam_pos - look_at).mag(),
+    );
 
+
+    // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
+    // for that pixel.
+    let mut rng = LcRng::new(buffer.len() as u64);
     let world = random_scene(&mut rng);
     let start = time::Instant::now();
 
-    buffer.iter_mut().enumerate().for_each(|(idx, pix)| {
+    buffer.par_iter_mut().enumerate().for_each(|(idx, pix)| {
+        // NOTE: I have no idea if seeding the Rng with the idx is valid.
+        let mut rng = LcRng::new(idx as u64);
         let pos: Coord = idx.into();
 
         let mut total_color = Vec3::zero();

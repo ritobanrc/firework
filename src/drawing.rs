@@ -1,6 +1,5 @@
 use crate::util::{random_in_unit_sphere, reflect, refract, schlick};
 use crate::Ray;
-use std::rc::Rc;
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::Vec3;
 
@@ -25,7 +24,7 @@ fn sky_color(r: &Ray) -> Vec3 {
 pub fn color(r: &Ray, world: &HitableList, depth: usize, rand: &mut LcRng) -> Vec3 {
     if let Some(hit) = world.hit(r, 0.001, 2e9) {
         if depth < 4 {
-            if let Some(result) = hit.material.as_ref().scatter(r, &hit, rand) {
+            if let Some(result) = hit.material.scatter(r, &hit, rand) {
                 result.attenuation * color(&result.scattered, world, depth + 1, rand)
             } else {
                 Vec3::zero()
@@ -38,11 +37,11 @@ pub fn color(r: &Ray, world: &HitableList, depth: usize, rand: &mut LcRng) -> Ve
     }
 }
 
-pub struct Hit {
+pub struct Hit<'a> {
     t: f32,
     point: Vec3,
     normal: Vec3,
-    material: Rc<dyn Material>,
+    material: &'a dyn Material,
 }
 
 pub trait Hitable {
@@ -52,11 +51,11 @@ pub trait Hitable {
 pub struct Sphere {
     center: Vec3,
     radius: f32,
-    material: Rc<dyn Material>,
+    material: Box<dyn Material + Sync>,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f32, material: Rc<dyn Material>) -> Sphere {
+    pub fn new(center: Vec3, radius: f32, material: Box<dyn Material + Sync>) -> Sphere {
         Sphere {
             center,
             radius,
@@ -66,7 +65,7 @@ impl Sphere {
 }
 
 impl Hitable for Sphere {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<Hit> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<Hit<'_>> {
         let v = *r.origin() - self.center;
         let a = r.direction().dot(*r.direction());
         let b = v.dot(*r.direction());
@@ -95,7 +94,7 @@ impl Hitable for Sphere {
                     t,
                     point,
                     normal: (point - self.center) / self.radius,
-                    material: Rc::clone(&self.material),
+                    material: self.material.as_ref(),
                 })
             } else {
                 None
@@ -106,7 +105,7 @@ impl Hitable for Sphere {
     }
 }
 
-pub struct HitableList(Vec<Box<dyn Hitable>>);
+pub struct HitableList(Vec<Box<dyn Hitable + Sync>>);
 
 impl HitableList {
     pub fn new() -> HitableList {
@@ -126,11 +125,11 @@ impl HitableList {
         last_hit
     }
 
-    pub fn list(&self) -> &Vec<Box<dyn Hitable>> {
+    pub fn list(&self) -> &Vec<Box<dyn Hitable + Sync>> {
         &self.0
     }
 
-    pub fn list_mut(&mut self) -> &mut Vec<Box<dyn Hitable>> {
+    pub fn list_mut(&mut self) -> &mut Vec<Box<dyn Hitable + Sync>> {
         &mut self.0
     }
 }
@@ -224,11 +223,11 @@ impl Material for DielectricMat {
         };
 
         if let Some(refracted) = refract(r_in.direction(), &outward_normal, ni_over_nt) {
-            if rand.rand_f32() >  schlick(cosine, self.ref_idx) {
+            if rand.rand_f32() > schlick(cosine, self.ref_idx) {
                 return Some(ScatterResult {
                     scattered: Ray::new(hit.point, refracted),
                     attenuation: Vec3::one(),
-                })
+                });
             }
         }
         Some(ScatterResult {
