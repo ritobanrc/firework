@@ -2,25 +2,26 @@
 #![feature(exclusive_range_pattern)]
 
 use crate::camera::Camera;
-use crate::drawing::{color, DielectricMat, HitableList, LambertianMat, MetalMat, Sphere};
+use crate::render::{color, Sphere, HitableList};
+use crate::material::{DielectricMat, LambertianMat, MetalMat};
 use crate::ray::Ray;
 use crate::util::*;
 use anyhow::Result;
 use image::{save_buffer_with_format, ColorType, ImageFormat};
 use minifb::{Key, Window, WindowOptions};
 use rayon::prelude::*;
-use std::rc::Rc;
 use std::time;
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::Vec3;
 
 mod camera;
-mod drawing;
+mod render;
 mod ray;
 mod util;
+mod material;
 
-const WIDTH: usize = 480;
-const HEIGHT: usize = 270;
+const WIDTH: usize = 1920;
+const HEIGHT: usize = 1080;
 
 const SAMPLES: usize = 100;
 
@@ -28,7 +29,7 @@ pub fn random_scene(rand: &mut impl Rand) -> HitableList {
     let mut world = HitableList::new();
 
     world.list_mut().push(Box::new(Sphere::new(
-        Vec3::new(0., -1001., -1.),
+        Vec3::new(0., -1000., -1.),
         1000.,
         Box::new(LambertianMat::new(Vec3::new(0.5, 0.5, 0.5))),
     )));

@@ -1,4 +1,4 @@
-use crate::drawing::HitableList;
+use crate::render::HitableList;
 use crate::{HEIGHT, WIDTH};
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
