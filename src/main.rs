@@ -3,11 +3,10 @@
 
 use crate::bvh::BVHNode;
 use crate::camera::Camera;
-use crate::material::{DielectricMat, LambertianMat, MetalMat};
 use crate::ray::Ray;
-use crate::render::{color, HitableList, Sphere};
+use crate::render::color;
+use crate::scenes::random_scene;
 use crate::util::*;
-use anyhow::Result;
 use image::{save_buffer_with_format, ColorType, ImageFormat};
 use minifb::{Key, Window, WindowOptions};
 use rayon::prelude::*;
@@ -22,89 +21,16 @@ mod camera;
 mod material;
 mod ray;
 mod render;
+mod scenes;
+mod texture;
 mod util;
 
-const WIDTH: usize = 960;
-const HEIGHT: usize = 540;
+const WIDTH: usize = 480;
+const HEIGHT: usize = 270;
 
-const SAMPLES: usize = 100;
+const SAMPLES: usize = 25;
 
-pub fn random_scene(rand: &mut impl Rand) -> HitableList {
-    let mut world = HitableList::new();
-
-    world.list_mut().push(Box::new(Sphere::new(
-        Vec3::new(0., -1000., -1.),
-        1000.,
-        Box::new(LambertianMat::new(Vec3::new(0.5, 0.5, 0.5))),
-    )));
-
-    for x in -11..11 {
-        for y in -11..11 {
-            let center = Vec3::new(
-                x as f32 + 0.9 * rand.rand_f32(),
-                0.2,
-                y as f32 + 0.9 * rand.rand_f32(),
-            );
-            if (center - Vec3::new(4., 0.2, 0.9)).mag() > 0.9 {
-                match rand.rand_f32() {
-                    x if x.in_range(0.0, 0.8) => {
-                        world.list_mut().push(Box::new(Sphere::new(
-                            center,
-                            0.2,
-                            Box::new(LambertianMat::new(Vec3::new(
-                                rand.rand_f32() * rand.rand_f32(),
-                                rand.rand_f32() * rand.rand_f32(),
-                                rand.rand_f32() * rand.rand_f32(),
-                            ))),
-                        )));
-                    }
-                    x if x.in_range(0.8, 0.95) => {
-                        world.list_mut().push(Box::new(Sphere::new(
-                            center,
-                            0.2,
-                            Box::new(MetalMat::new(
-                                Vec3::new(
-                                    0.5 * (1. + rand.rand_f32()),
-                                    0.5 * (1. + rand.rand_f32()),
-                                    0.5 * (1. + rand.rand_f32()),
-                                ),
-                                0.5 * rand.rand_f32(),
-                            )),
-                        )));
-                    }
-                    x if x.in_range(0.95, 1.) => {
-                        world.list_mut().push(Box::new(Sphere::new(
-                            center,
-                            0.2,
-                            Box::new(DielectricMat::new(1.5)),
-                        )));
-                    }
-                    _ => unreachable!(),
-                }
-            }
-        }
-    }
-
-    world.list_mut().push(Box::new(Sphere::new(
-        Vec3::new(0., 1., 0.),
-        1.0,
-        Box::new(DielectricMat::new(1.5)),
-    )));
-    world.list_mut().push(Box::new(Sphere::new(
-        Vec3::new(-4., 1., 0.),
-        1.0,
-        Box::new(LambertianMat::new(Vec3::new(0.4, 0.2, 0.1))),
-    )));
-    world.list_mut().push(Box::new(Sphere::new(
-        Vec3::new(4., 1., 0.),
-        1.0,
-        Box::new(MetalMat::new(Vec3::new(0.7, 0.6, 0.5), 0.0)),
-    )));
-
-    world
-}
-
-fn main() -> Result<()> {
+fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
     let cam_pos = Vec3::new(13., 2., 3.);
@@ -186,10 +112,9 @@ fn main() -> Result<()> {
                 HEIGHT as u32,
                 ColorType::RGB(8),
                 ImageFormat::PNG,
-            )?;
+            )
+            .expect("Failed to save to ./render.png");
         }
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
-
-    Ok(())
 }

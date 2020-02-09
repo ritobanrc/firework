@@ -20,6 +20,7 @@ impl<'a> BVHNode<'a> {
 
     fn new_helper(list: &'a mut [Box<dyn Hitable + Sync>], depth: usize) -> Self {
         // TODO: Figure out why bounding_box returns an option
+        // TODO: Replace all the `expect`s with proper error handling
         match depth % 3 {
             0 => list.sort_unstable_by(|a, b| {
                 let a_box = a

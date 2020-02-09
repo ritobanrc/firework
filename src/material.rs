@@ -1,4 +1,5 @@
 use crate::render::RaycastHit;
+use crate::texture::{ConstantTexture, Texture};
 use crate::util::{random_in_unit_sphere, reflect, refract, schlick};
 use crate::Ray;
 use tiny_rng::{LcRng, Rand};
@@ -14,12 +15,18 @@ pub struct ScatterResult {
 }
 
 pub struct LambertianMat {
-    albedo: Vec3,
+    albedo: Box<dyn Texture + Sync>,
 }
 
 impl LambertianMat {
-    pub fn new(albedo: Vec3) -> LambertianMat {
+    pub fn new(albedo: Box<dyn Texture + Sync>) -> LambertianMat {
         LambertianMat { albedo }
+    }
+
+    pub fn with_color(albedo: Vec3) -> LambertianMat {
+        LambertianMat {
+            albedo: Box::new(ConstantTexture::new(albedo)),
+        }
     }
 }
 
@@ -27,7 +34,8 @@ impl Material for LambertianMat {
     fn scatter(&self, _r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult> {
         let target = hit.point + hit.normal + random_in_unit_sphere(rand);
         let scattered = Ray::new(hit.point, target - hit.point);
-        let attenuation = self.albedo;
+        // TODO: Use proper UV Mapping
+        let attenuation = self.albedo.sample(0., 0., &hit.point);
         Some(ScatterResult {
             scattered,
             attenuation,

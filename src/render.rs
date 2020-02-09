@@ -1,7 +1,7 @@
 use crate::aabb::AABB;
 use crate::material::Material;
 use crate::Ray;
-use tiny_rng::{LcRng, Rand};
+use tiny_rng::LcRng;
 use ultraviolet::Vec3;
 
 const SKY_BLUE: Vec3 = Vec3 {
@@ -121,16 +121,12 @@ impl HitableList {
         HitableList(Vec::new())
     }
 
-    pub fn list(&self) -> &Vec<Box<dyn Hitable + Sync>> {
+    pub fn _list(&self) -> &Vec<Box<dyn Hitable + Sync>> {
         &self.0
     }
 
     pub fn list_mut(&mut self) -> &mut Vec<Box<dyn Hitable + Sync>> {
         &mut self.0
-    }
-
-    pub fn list_owned(self) -> Vec<Box<dyn Hitable + Sync>> {
-        self.0
     }
 }
 
