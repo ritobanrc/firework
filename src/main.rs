@@ -1,27 +1,31 @@
 #![feature(array_value_iter)]
 #![feature(exclusive_range_pattern)]
 
+use crate::bvh::BVHNode;
 use crate::camera::Camera;
-use crate::render::{color, Sphere, HitableList};
 use crate::material::{DielectricMat, LambertianMat, MetalMat};
 use crate::ray::Ray;
+use crate::render::{color, HitableList, Sphere};
 use crate::util::*;
 use anyhow::Result;
 use image::{save_buffer_with_format, ColorType, ImageFormat};
 use minifb::{Key, Window, WindowOptions};
 use rayon::prelude::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time;
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::Vec3;
 
+mod aabb;
+mod bvh;
 mod camera;
-mod render;
-mod ray;
-mod util;
 mod material;
+mod ray;
+mod render;
+mod util;
 
-const WIDTH: usize = 1920;
-const HEIGHT: usize = 1080;
+const WIDTH: usize = 960;
+const HEIGHT: usize = 540;
 
 const SAMPLES: usize = 100;
 
@@ -114,12 +118,16 @@ fn main() -> Result<()> {
         (cam_pos - look_at).mag(),
     );
 
-
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.
     let mut rng = LcRng::new(buffer.len() as u64);
-    let world = random_scene(&mut rng);
+    let mut world = random_scene(&mut rng);
+
+    let root_bvh = BVHNode::new(&mut world);
+
     let start = time::Instant::now();
+
+    let completed = AtomicUsize::new(0);
 
     buffer.par_iter_mut().enumerate().for_each(|(idx, pix)| {
         // NOTE: I have no idea if seeding the Rng with the idx is valid.
@@ -131,7 +139,7 @@ fn main() -> Result<()> {
         for _ in 0..SAMPLES {
             let (u, v): (f32, f32) = pos.into_f32s_with_offset(rng.rand_f32(), rng.rand_f32());
             let ray = camera.ray(u, v, &mut rng);
-            total_color += color(&ray, &world, 0, &mut rng);
+            total_color += color(&ray, &root_bvh, 0, &mut rng);
         }
 
         total_color /= SAMPLES as f32;
@@ -140,32 +148,11 @@ fn main() -> Result<()> {
         let colori: Color = total_color.into();
         *pix = colori.into();
 
+        let count = completed.fetch_add(1, Ordering::SeqCst);
         if idx % 1000 == 0 {
-            println!("Completed {}/{}", idx / 1000, WIDTH * HEIGHT / 1000)
+            println!("Completed {}/{}", count / 1000, WIDTH * HEIGHT / 1000)
         }
     });
-
-    //for (idx, pix) in buffer.iter_mut().enumerate() {
-    //let pos: Coord = idx.into();
-
-    //let mut total_color = Vec3::zero();
-
-    //for _ in 0..SAMPLES {
-    //let (u, v): (f32, f32) = pos.into_f32s_with_offset(rng.rand_f32(), rng.rand_f32());
-    //let ray = camera.ray(u, v);
-    //total_color += color(&ray, &world, 0, &mut rng);
-    //}
-
-    //total_color /= SAMPLES as f32;
-    //total_color = total_color.map(f32::sqrt);
-
-    //let colori: Color = total_color.into();
-    //*pix = colori.into();
-
-    //if idx % 1000 == 0 {
-    //println!("Completed {}/{}", idx / 1000, WIDTH * HEIGHT / 1000)
-    //}
-    //}
 
     let end = time::Instant::now();
     println!("Finished Rendering in {} s", (end - start).as_secs());

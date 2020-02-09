@@ -1,9 +1,8 @@
-use crate::util::{random_in_unit_sphere, reflect, refract, schlick};
 use crate::render::RaycastHit;
+use crate::util::{random_in_unit_sphere, reflect, refract, schlick};
 use crate::Ray;
-use tiny_rng::{Rand, LcRng};
+use tiny_rng::{LcRng, Rand};
 use ultraviolet::Vec3;
-
 
 pub trait Material {
     fn scatter(&self, r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult>;

@@ -1,5 +1,6 @@
-use crate::Ray;
+use crate::aabb::AABB;
 use crate::material::Material;
+use crate::Ray;
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::Vec3;
 
@@ -21,7 +22,7 @@ fn sky_color(r: &Ray) -> Vec3 {
     (1. - t) * SKY_WHITE + t * SKY_BLUE
 }
 
-pub fn color(r: &Ray, world: &HitableList, depth: usize, rand: &mut LcRng) -> Vec3 {
+pub fn color(r: &Ray, world: &dyn Hitable, depth: usize, rand: &mut LcRng) -> Vec3 {
     if let Some(hit) = world.hit(r, 0.001, 2e9) {
         if depth < 4 {
             if let Some(result) = hit.material.scatter(r, &hit, rand) {
@@ -46,6 +47,7 @@ pub struct RaycastHit<'a> {
 
 pub trait Hitable {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit>;
+    fn bounding_box(&self) -> Option<AABB>;
 }
 
 pub struct Sphere {
@@ -103,6 +105,13 @@ impl Hitable for Sphere {
             None
         }
     }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        Some(AABB::new(
+            self.center - Vec3::one() * self.radius,
+            self.center + Vec3::one() * self.radius,
+        ))
+    }
 }
 
 pub struct HitableList(Vec<Box<dyn Hitable + Sync>>);
@@ -112,6 +121,20 @@ impl HitableList {
         HitableList(Vec::new())
     }
 
+    pub fn list(&self) -> &Vec<Box<dyn Hitable + Sync>> {
+        &self.0
+    }
+
+    pub fn list_mut(&mut self) -> &mut Vec<Box<dyn Hitable + Sync>> {
+        &mut self.0
+    }
+
+    pub fn list_owned(self) -> Vec<Box<dyn Hitable + Sync>> {
+        self.0
+    }
+}
+
+impl Hitable for HitableList {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
         let mut last_hit = None;
         let mut closest = t_max;
@@ -125,11 +148,18 @@ impl HitableList {
         last_hit
     }
 
-    pub fn list(&self) -> &Vec<Box<dyn Hitable + Sync>> {
-        &self.0
-    }
-
-    pub fn list_mut(&mut self) -> &mut Vec<Box<dyn Hitable + Sync>> {
-        &mut self.0
+    fn bounding_box(&self) -> Option<AABB> {
+        let mut result: Option<AABB> = None;
+        for hitable in self.0.iter() {
+            let next_box = hitable.bounding_box();
+            if let Some(next_box) = next_box {
+                if let Some(aabb) = result {
+                    result = Some(aabb.expand(&next_box));
+                } else {
+                    result = Some(next_box);
+                }
+            }
+        }
+        result
     }
 }
