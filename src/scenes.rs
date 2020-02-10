@@ -1,9 +1,49 @@
 use crate::material::{DielectricMat, LambertianMat, MetalMat};
 use crate::render::{HitableList, Sphere};
 use crate::util::InRange;
-use crate::texture::{CheckerTexture, ConstantTexture};
+use crate::texture::{CheckerTexture, ConstantTexture, PerlinNoiseTexture};
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
+
+pub fn two_spheres_checker() -> HitableList {
+    let mut world = HitableList::new();
+    world.list_mut().push(Box::new(Sphere::new(
+        Vec3::new(0., -10., -1.),
+        10.,
+        Box::new(LambertianMat::new(Box::new(CheckerTexture::new(
+            Box::new(ConstantTexture::new(Vec3::new(0.2, 0.4, 0.1))),
+            Box::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9))),
+            10.
+        )))),
+    )));
+    world.list_mut().push(Box::new(Sphere::new(
+        Vec3::new(0., 10., -1.),
+        10.,
+        Box::new(LambertianMat::new(Box::new(CheckerTexture::new(
+            Box::new(ConstantTexture::new(Vec3::new(0.2, 0.4, 0.1))),
+            Box::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9))),
+            10.
+        )))),
+    )));
+    world
+}
+
+
+pub fn two_spheres_perlin() -> HitableList {
+    let mut world = HitableList::new();
+    world.list_mut().push(Box::new(Sphere::new(
+        Vec3::new(0., -1000., 0.),
+        1000.,
+        Box::new(LambertianMat::new(Box::new(PerlinNoiseTexture::new(5.)))),
+    )));
+
+    world.list_mut().push(Box::new(Sphere::new(
+        Vec3::new(0., 2., 0.),
+        2.,
+        Box::new(LambertianMat::new(Box::new(PerlinNoiseTexture::new(10.)))),
+    )));
+    world
+}
 
 pub fn random_scene(rand: &mut impl Rand) -> HitableList {
     let mut world = HitableList::new();

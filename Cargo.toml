@@ -8,8 +8,8 @@ edition = "2018"
 
 [dependencies]
 minifb = "0.15.3"
-anyhow = "1.0"
 ultraviolet = "0.4.5"
 tiny-rng = "0.1.0"
 image = "0.22.4"
 rayon = "1.3.0"
+lazy_static = "1.4.0"
