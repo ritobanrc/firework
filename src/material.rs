@@ -119,8 +119,6 @@ pub struct ConstantMat {
     albedo: Box<dyn Texture + Sync>,
 }
 
-
-
 impl ConstantMat {
     pub fn new(albedo: Box<dyn Texture + Sync>) -> ConstantMat {
         ConstantMat { albedo }
@@ -133,8 +131,6 @@ impl ConstantMat {
     }
 }
 
-
-
 impl Material for ConstantMat {
     fn scatter(&self, _r_in: &Ray, hit: &RaycastHit, _rand: &mut LcRng) -> Option<ScatterResult> {
         // TODO: Use proper UV Mapping
@@ -145,4 +141,3 @@ impl Material for ConstantMat {
         })
     }
 }
-

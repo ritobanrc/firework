@@ -1,7 +1,7 @@
 use crate::{HEIGHT, WIDTH};
+use std::f32::consts::PI;
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
-use std::f32::consts::PI;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Color(u8, u8, u8);
@@ -103,7 +103,7 @@ impl InRange for f32 {
 pub fn sphere_uv(point: &Vec3) -> (f32, f32) {
     let phi = point.z.atan2(point.x);
     let theta = point.y.asin();
-    let u = 1. - (phi + PI)/(2. * PI);
-    let v = (theta + PI/2.) / PI;
+    let u = 1. - (phi + PI) / (2. * PI);
+    let v = (theta + PI / 2.) / PI;
     (u, v)
 }

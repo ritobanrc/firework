@@ -1,9 +1,9 @@
 use crate::aabb::AABB;
 use crate::material::Material;
+use crate::util::sphere_uv;
 use crate::Ray;
 use tiny_rng::LcRng;
 use ultraviolet::Vec3;
-use crate::util::sphere_uv;
 
 const SKY_BLUE: Vec3 = Vec3 {
     x: 0.5,

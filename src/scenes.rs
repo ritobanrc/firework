@@ -1,11 +1,12 @@
-use crate::material::{DielectricMat, LambertianMat, MetalMat, ConstantMat};
+use crate::material::{ConstantMat, DielectricMat, LambertianMat, MetalMat};
 use crate::render::{HitableList, Sphere};
+use crate::texture::{
+    CheckerTexture, ConstantTexture, ImageTexture, PerlinNoiseTexture, TurbulenceTexture,
+};
 use crate::util::InRange;
-use crate::texture::{CheckerTexture, ConstantTexture, PerlinNoiseTexture, TurbulenceTexture, ImageTexture};
 use image::open;
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
-
 
 pub fn two_spheres_checker() -> HitableList {
     let mut world = HitableList::new();
@@ -15,7 +16,7 @@ pub fn two_spheres_checker() -> HitableList {
         Box::new(LambertianMat::new(Box::new(CheckerTexture::new(
             Box::new(ConstantTexture::new(Vec3::new(0.2, 0.4, 0.1))),
             Box::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9))),
-            10.
+            10.,
         )))),
     )));
     world.list_mut().push(Box::new(Sphere::new(
@@ -24,12 +25,11 @@ pub fn two_spheres_checker() -> HitableList {
         Box::new(LambertianMat::new(Box::new(CheckerTexture::new(
             Box::new(ConstantTexture::new(Vec3::new(0.2, 0.4, 0.1))),
             Box::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9))),
-            10.
+            10.,
         )))),
     )));
     world
 }
-
 
 pub fn two_spheres_perlin() -> HitableList {
     let mut world = HitableList::new();
@@ -46,7 +46,6 @@ pub fn two_spheres_perlin() -> HitableList {
     )));
     world
 }
-
 
 pub fn two_spheres_turb() -> HitableList {
     let mut world = HitableList::new();
@@ -68,14 +67,12 @@ pub fn earth_scene() -> HitableList {
     let mut world = HitableList::new();
     let image = open("./earthmap.jpg").unwrap();
     world.list_mut().push(Box::new(Sphere::new(
-                Vec3::new(0., 0., 0.),
-                2.,
-                Box::new(LambertianMat::new(Box::new(ImageTexture::new(image)))),
-                )));
+        Vec3::new(0., 0., 0.),
+        2.,
+        Box::new(ConstantMat::new(Box::new(ImageTexture::new(image)))),
+    )));
     world
-
 }
-
 
 pub fn random_scene(rand: &mut impl Rand) -> HitableList {
     let mut world = HitableList::new();
@@ -86,7 +83,7 @@ pub fn random_scene(rand: &mut impl Rand) -> HitableList {
         Box::new(LambertianMat::new(Box::new(CheckerTexture::new(
             Box::new(ConstantTexture::new(Vec3::new(0.2, 0.4, 0.1))),
             Box::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9))),
-            10.
+            10.,
         )))),
     )));
 
