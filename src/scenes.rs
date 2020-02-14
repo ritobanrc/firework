@@ -1,9 +1,11 @@
-use crate::material::{DielectricMat, LambertianMat, MetalMat};
+use crate::material::{DielectricMat, LambertianMat, MetalMat, ConstantMat};
 use crate::render::{HitableList, Sphere};
 use crate::util::InRange;
-use crate::texture::{CheckerTexture, ConstantTexture, PerlinNoiseTexture};
+use crate::texture::{CheckerTexture, ConstantTexture, PerlinNoiseTexture, TurbulenceTexture, ImageTexture};
+use image::open;
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
+
 
 pub fn two_spheres_checker() -> HitableList {
     let mut world = HitableList::new();
@@ -34,16 +36,46 @@ pub fn two_spheres_perlin() -> HitableList {
     world.list_mut().push(Box::new(Sphere::new(
         Vec3::new(0., -1000., 0.),
         1000.,
-        Box::new(LambertianMat::new(Box::new(PerlinNoiseTexture::new(5.)))),
+        Box::new(ConstantMat::new(Box::new(PerlinNoiseTexture::new(1.)))),
     )));
 
     world.list_mut().push(Box::new(Sphere::new(
         Vec3::new(0., 2., 0.),
         2.,
-        Box::new(LambertianMat::new(Box::new(PerlinNoiseTexture::new(10.)))),
+        Box::new(ConstantMat::new(Box::new(PerlinNoiseTexture::new(2.)))),
     )));
     world
 }
+
+
+pub fn two_spheres_turb() -> HitableList {
+    let mut world = HitableList::new();
+    world.list_mut().push(Box::new(Sphere::new(
+        Vec3::new(0., -1000., 0.),
+        1000.,
+        Box::new(ConstantMat::new(Box::new(TurbulenceTexture::new(4, 1.)))),
+    )));
+
+    world.list_mut().push(Box::new(Sphere::new(
+        Vec3::new(0., 2., 0.),
+        2.,
+        Box::new(ConstantMat::new(Box::new(TurbulenceTexture::new(3, 5.)))),
+    )));
+    world
+}
+
+pub fn earth_scene() -> HitableList {
+    let mut world = HitableList::new();
+    let image = open("./earthmap.jpg").unwrap();
+    world.list_mut().push(Box::new(Sphere::new(
+                Vec3::new(0., 0., 0.),
+                2.,
+                Box::new(LambertianMat::new(Box::new(ImageTexture::new(image)))),
+                )));
+    world
+
+}
+
 
 pub fn random_scene(rand: &mut impl Rand) -> HitableList {
     let mut world = HitableList::new();

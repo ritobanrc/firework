@@ -3,6 +3,7 @@ use crate::material::Material;
 use crate::Ray;
 use tiny_rng::LcRng;
 use ultraviolet::Vec3;
+use crate::util::sphere_uv;
 
 const SKY_BLUE: Vec3 = Vec3 {
     x: 0.5,
@@ -26,7 +27,11 @@ pub fn color(r: &Ray, world: &dyn Hitable, depth: usize, rand: &mut LcRng) -> Ve
     if let Some(hit) = world.hit(r, 0.001, 2e9) {
         if depth < 4 {
             if let Some(result) = hit.material.scatter(r, &hit, rand) {
-                result.attenuation * color(&result.scattered, world, depth + 1, rand)
+                if result.scattered.direction().mag_sq() < 0.01 {
+                    result.attenuation
+                } else {
+                    result.attenuation * color(&result.scattered, world, depth + 1, rand)
+                }
             } else {
                 Vec3::zero()
             }
@@ -43,6 +48,7 @@ pub struct RaycastHit<'a> {
     pub point: Vec3,
     pub normal: Vec3,
     pub material: &'a dyn Material,
+    pub uv: (f32, f32),
 }
 
 pub trait Hitable {
@@ -97,6 +103,7 @@ impl Hitable for Sphere {
                     point,
                     normal: (point - self.center) / self.radius,
                     material: self.material.as_ref(),
+                    uv: sphere_uv(&((point - self.center) / self.radius)),
                 })
             } else {
                 None

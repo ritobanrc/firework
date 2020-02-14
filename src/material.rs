@@ -35,7 +35,7 @@ impl Material for LambertianMat {
         let target = hit.point + hit.normal + random_in_unit_sphere(rand);
         let scattered = Ray::new(hit.point, target - hit.point);
         // TODO: Use proper UV Mapping
-        let attenuation = self.albedo.sample(0., 0., &hit.point);
+        let attenuation = self.albedo.sample(hit.uv, &hit.point);
         Some(ScatterResult {
             scattered,
             attenuation,
@@ -114,3 +114,35 @@ impl Material for DielectricMat {
         })
     }
 }
+
+pub struct ConstantMat {
+    albedo: Box<dyn Texture + Sync>,
+}
+
+
+
+impl ConstantMat {
+    pub fn new(albedo: Box<dyn Texture + Sync>) -> ConstantMat {
+        ConstantMat { albedo }
+    }
+
+    pub fn with_color(albedo: Vec3) -> ConstantMat {
+        ConstantMat {
+            albedo: Box::new(ConstantTexture::new(albedo)),
+        }
+    }
+}
+
+
+
+impl Material for ConstantMat {
+    fn scatter(&self, _r_in: &Ray, hit: &RaycastHit, _rand: &mut LcRng) -> Option<ScatterResult> {
+        // TODO: Use proper UV Mapping
+        let attenuation = self.albedo.sample(hit.uv, &hit.point);
+        Some(ScatterResult {
+            scattered: Ray::new(hit.point, Vec3::zero()),
+            attenuation,
+        })
+    }
+}
+

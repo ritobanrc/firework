@@ -1,9 +1,10 @@
 use ultraviolet::Vec3;
 use tiny_rng::{Rand, Rng};
 use std::mem;
+use image::{GenericImageView, Pixel, Rgba, Primitive};
 
 pub trait Texture {
-    fn sample(&self, u: f32, v: f32, point: &Vec3) -> Vec3;
+    fn sample(&self, uv: (f32, f32), point: &Vec3) -> Vec3;
 }
 
 pub struct ConstantTexture {
@@ -17,7 +18,7 @@ impl ConstantTexture {
 }
 
 impl Texture for ConstantTexture {
-    fn sample(&self, _u: f32, _v: f32, _point: &Vec3) -> Vec3 {
+    fn sample(&self, uv: (f32, f32), _point: &Vec3) -> Vec3 {
         self.color
     }
 }
@@ -35,13 +36,13 @@ impl CheckerTexture {
 }
 
 impl Texture for CheckerTexture {
-    fn sample(&self, u: f32, v: f32, point: &Vec3) -> Vec3 {
+    fn sample(&self, uv: (f32, f32), point: &Vec3) -> Vec3 {
         // TODO: Actually use proper uv coordinates
         let iter: [f32; 3] = (*point).into();
         if iter.iter().map(|x| (self.scale*x).sin()).product::<f32>().is_sign_positive() {
-            self.even.sample(u, v, point)
+            self.even.sample(uv, point)
         } else {
-            self.odd.sample(u, v, point)
+            self.odd.sample(uv, point)
         }
     }
 }
@@ -49,7 +50,6 @@ impl Texture for CheckerTexture {
 pub struct PerlinNoiseTexture {
     scale: f32
 }
-
 
 static P: [usize; 512] = [151,160,137,91,90,15,131,13,201,95,96,53,194,233,
 	7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,190, 6,148,247,120,234,
@@ -87,43 +87,46 @@ impl PerlinNoiseTexture {
         let x0 = p.x.floor() as usize & 255;
         let y0 = p.y.floor() as usize & 255;
         let z0 = p.z.floor() as usize & 255;
-     
+
         let x = p.x - p.x.floor();
         let y = p.y - p.y.floor();
         let z = p.z - p.z.floor();
-     
+
         let u = fade(x);
         let v = fade(y);
         let w = fade(z);
-     
+
         let a = P[x0] + y0;
         let aa = P[a] + z0;
         let ab = P[a + 1] + z0;
         let b = P[x0 + 1] + y0;
         let ba = P[b] + z0;
         let bb = P[b + 1] + z0;
-     
-        return lerp(w,
-            lerp(v, lerp(u, grad(P[aa], x    , y    , z),
-                    grad(P[ba], x-1.0, y    , z)),
-                lerp(u, grad(P[ab], x    , y-1.0, z),
-                                    grad(P[bb], x-1.0, y-1.0, z))),
-            lerp(v, lerp(u, grad(P[aa+1], x    , y    , z-1.0),
-                                    grad(P[ba+1], x-1.0, y    , z-1.0)),
-                            lerp(u, grad(P[ab+1], x    , y-1.0, z-1.0),
-                                    grad(P[bb+1], x-1.0, y-1.0, z-1.0))));
+
+        lerp(w,
+             lerp(v, lerp(u, grad(P[aa], x    , y    , z),
+             grad(P[ba], x-1.0, y    , z)),
+             lerp(u, grad(P[ab], x    , y-1.0, z),
+             grad(P[bb], x-1.0, y-1.0, z))),
+             lerp(v, lerp(u, grad(P[aa+1], x    , y    , z-1.0),
+             grad(P[ba+1], x-1.0, y    , z-1.0)),
+             lerp(u, grad(P[ab+1], x    , y-1.0, z-1.0),
+             grad(P[bb+1], x-1.0, y-1.0, z-1.0))))
     }
 }
 
 
 impl Texture for PerlinNoiseTexture {
-    fn sample(&self, u: f32, v: f32, point: &Vec3) -> Vec3 {
-        Vec3::one() * PerlinNoiseTexture::noise(&(*point * self.scale))
+    fn sample(&self, uv: (f32, f32), point: &Vec3) -> Vec3 {
+        let a = PerlinNoiseTexture::noise(&(*point * self.scale));
+        Vec3::one() * (a + 0.5).min(1.)
+        //Vec3::new(-0.5, 0., 0.)
     }
 }
 
 fn fade(t: f32) -> f32 {
-    t * t * t * (t * (t * 6. - 15.) + 10.)
+    //t * t * t * (t * (t * 6. - 15.) + 10.)
+    t * t * (3. - 2. * t)
 }
 
 
@@ -138,3 +141,65 @@ fn grad(hash: usize, x: f32, y: f32, z: f32) -> f32 {
 fn lerp(t: f32, a: f32, b: f32) -> f32 {
     a + t * (b - a)
 }
+
+
+
+pub struct TurbulenceTexture {
+    depth: usize,
+    scale: f32
+}
+
+impl TurbulenceTexture {
+    pub fn new(depth: usize, scale: f32) -> Self {
+        TurbulenceTexture { depth, scale }
+    }
+
+    fn turb(&self, point: Vec3) -> f32 {
+        let mut accum = 0.;
+        let mut p = point;
+        let mut weight = 1.;
+        for _ in 0..self.depth {
+            let a = PerlinNoiseTexture::noise(&p);
+            accum += weight * a;
+            weight *= 0.5;
+            p *= 2.;
+        }
+        accum
+    }
+}
+
+impl Texture for TurbulenceTexture {
+    fn sample(&self, _uv: (f32, f32), point: &Vec3) -> Vec3 {
+        Vec3::one() * self.turb(*point * self.scale)
+    }
+}
+
+
+pub struct ImageTexture<T> {
+    image: T
+}
+
+impl<'a, T> ImageTexture<T> where T: GenericImageView {
+    pub fn new(image: T) -> ImageTexture<T> {
+        ImageTexture { image }
+    }
+}
+
+
+impl<T> Texture for ImageTexture<T> where T: GenericImageView<Pixel=Rgba<u8>> {
+    fn sample(&self, uv: (f32, f32), _point: &Vec3) -> Vec3 {
+        let (w, h) = self.image.dimensions();
+        let i = uv.0 * self.image.dimensions().0 as f32;
+        let j = (1. - uv.1) * self.image.dimensions().1 as f32;
+
+        let i = (i as u32).clamp(0, w - 1);
+        let j = (j as u32).clamp(0, h - 1);
+
+        let c: Rgba<u8> = self.image.get_pixel(i as u32, j as u32).to_rgba();
+
+        //println!("{:?} ({}, {}) : {:?}", uv, i, j, c);
+
+        Vec3::new(c[0].into(), c[1].into(), c[2].into()) / 255.
+    }
+}
+

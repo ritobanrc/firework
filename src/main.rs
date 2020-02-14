@@ -1,14 +1,12 @@
 #![feature(array_value_iter)]
 #![feature(exclusive_range_pattern)]
-
-#[macro_use]
-extern crate lazy_static;
+#![feature(clamp)]
 
 use crate::bvh::BVHNode;
 use crate::camera::Camera;
 use crate::ray::Ray;
 use crate::render::color;
-use crate::scenes::{two_spheres_perlin, random_scene};
+use crate::scenes::*;
 use crate::util::*;
 use image::{save_buffer_with_format, ColorType, ImageFormat};
 use minifb::{Key, Window, WindowOptions};
@@ -50,7 +48,7 @@ fn main() {
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.
     let mut rng = LcRng::new(buffer.len() as u64);
-    let mut world = two_spheres_perlin();
+    let mut world = earth_scene();
 
     let root_bvh = BVHNode::new(&mut world);
 
