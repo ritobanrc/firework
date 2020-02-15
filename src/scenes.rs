@@ -1,8 +1,6 @@
 use crate::material::{ConstantMat, DielectricMat, LambertianMat, MetalMat};
-use crate::render::{HitableList, Sphere};
-use crate::texture::{
-    CheckerTexture, ConstantTexture, ImageTexture, PerlinNoiseTexture, TurbulenceTexture,
-};
+use crate::render::{HitableList, Sphere, XYRect};
+use crate::texture::*;
 use crate::util::InRange;
 use image::open;
 use tiny_rng::Rand;
@@ -52,13 +50,13 @@ pub fn two_spheres_turb() -> HitableList {
     world.list_mut().push(Box::new(Sphere::new(
         Vec3::new(0., -1000., 0.),
         1000.,
-        Box::new(ConstantMat::new(Box::new(TurbulenceTexture::new(4, 1.)))),
+        Box::new(LambertianMat::new(Box::new(TurbulenceTexture::new(4, 1.)))),
     )));
 
     world.list_mut().push(Box::new(Sphere::new(
         Vec3::new(0., 2., 0.),
         2.,
-        Box::new(ConstantMat::new(Box::new(TurbulenceTexture::new(3, 5.)))),
+        Box::new(ConstantMat::new(Box::new(MarbleTexture::new(7, 5.)))),
     )));
     world
 }
@@ -73,6 +71,26 @@ pub fn earth_scene() -> HitableList {
     )));
     world
 }
+
+
+pub fn light_scene() -> HitableList {
+    let mut world = HitableList::new();
+    world.list_mut().push(Box::new(Sphere::new(
+        Vec3::new(0., -1000., 0.),
+        1000.,
+        Box::new(LambertianMat::new(Box::new(TurbulenceTexture::new(4, 1.)))),
+    )));
+
+    world.list_mut().push(Box::new(Sphere::new(
+        Vec3::new(0., 2., 0.),
+        2.,
+        Box::new(LambertianMat::new(Box::new(MarbleTexture::new(7, 5.)))),
+    )));
+
+    world.list_mut().push(Box::new(XYRect::new(3., 5., 1., 3., -2., Box::new(ConstantMat::new(Box::new(ConstantTexture::new(Vec3::new(4., 4., 4.))))))));
+    world
+}
+
 
 pub fn random_scene(rand: &mut impl Rand) -> HitableList {
     let mut world = HitableList::new();

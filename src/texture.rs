@@ -180,11 +180,11 @@ impl TurbulenceTexture {
         TurbulenceTexture { depth, scale }
     }
 
-    fn turb(&self, point: Vec3) -> f32 {
+    fn turb(depth: usize, point: Vec3) -> f32 {
         let mut accum = 0.;
         let mut p = point;
         let mut weight = 1.;
-        for _ in 0..self.depth {
+        for _ in 0..depth {
             let a = PerlinNoiseTexture::noise(&p);
             accum += weight * a;
             weight *= 0.5;
@@ -196,9 +196,29 @@ impl TurbulenceTexture {
 
 impl Texture for TurbulenceTexture {
     fn sample(&self, _uv: (f32, f32), point: &Vec3) -> Vec3 {
-        Vec3::one() * self.turb(*point * self.scale)
+        Vec3::one() * TurbulenceTexture::turb(self.depth, *point * self.scale)
     }
 }
+
+
+
+pub struct MarbleTexture {
+    depth: usize,
+    scale: f32,
+}
+
+impl MarbleTexture {
+    pub fn new(depth: usize, scale: f32) -> Self {
+        MarbleTexture { depth, scale }
+    }
+}
+
+impl Texture for MarbleTexture {
+    fn sample(&self, _uv: (f32, f32), point: &Vec3) -> Vec3 {
+        Vec3::one() * 0.5 *  (1. + f32::sin(self.scale * point.z + 10. * TurbulenceTexture::turb(self.depth, *point)))
+    }
+}
+
 
 pub struct ImageTexture<T> {
     image: T,

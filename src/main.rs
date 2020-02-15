@@ -26,21 +26,21 @@ mod scenes;
 mod texture;
 mod util;
 
-const WIDTH: usize = 480;
-const HEIGHT: usize = 270;
+const WIDTH: usize = 960;
+const HEIGHT: usize = 540;
 
-const SAMPLES: usize = 25;
+const SAMPLES: usize = 100;
 
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
-    let cam_pos = Vec3::new(13., 2., 3.);
+    let cam_pos = Vec3::new(6., 1., 2.);
     let look_at = Vec3::new(0., 0., 0.);
     let camera = Camera::new(
         cam_pos,
         look_at,
         Vec3::unit_y(),
-        20.0,
+        60.0,
         0.1,
         (cam_pos - look_at).mag(),
     );
@@ -48,7 +48,7 @@ fn main() {
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.
     let mut rng = LcRng::new(buffer.len() as u64);
-    let mut world = earth_scene();
+    let mut world = light_scene();
 
     let root_bvh = BVHNode::new(&mut world);
 

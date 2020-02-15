@@ -39,7 +39,8 @@ pub fn color(r: &Ray, world: &dyn Hitable, depth: usize, rand: &mut LcRng) -> Ve
             Vec3::zero()
         }
     } else {
-        sky_color(r)
+        //sky_color(r)
+        Vec3::zero()
     }
 }
 
@@ -118,6 +119,47 @@ impl Hitable for Sphere {
             self.center - Vec3::one() * self.radius,
             self.center + Vec3::one() * self.radius,
         ))
+    }
+}
+
+pub struct XYRect {
+    x0: f32,
+    x1: f32,
+    y0: f32,
+    y1: f32,
+    k: f32,
+    material: Box<dyn Material + Sync>
+}
+
+impl XYRect {
+    pub fn new(x0: f32, x1: f32, y0: f32, y1: f32, k: f32, material: Box<dyn Material + Sync>) -> Self {
+        XYRect {
+            x0, x1, y0, y1, k, material
+        }
+    }
+}
+
+impl Hitable for XYRect {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
+        let t = (self.k - r.origin().z) / r.direction().z;
+        if t < t_min || t > t_max {
+            return None
+        }
+        let point = r.point(t);
+        if point.x < self.x0 || point.x > self.x1 || point.y < self.y0 || point.y > self.y1 {
+            return None
+        }
+        Some(RaycastHit {
+            t,
+            point,
+            normal: Vec3::unit_z(),
+            material: self.material.as_ref(),
+            uv: ((point.x - self.x0)/(self.x1 - self.x0), (point.y - self.y0)/(self.y1 - self.y0))
+        })
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        Some(AABB::new(Vec3::new(self.x0, self.y0, self.k), Vec3::new(self.x1, self.y1, self.k)))
     }
 }
 
