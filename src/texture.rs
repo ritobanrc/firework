@@ -200,8 +200,6 @@ impl Texture for TurbulenceTexture {
     }
 }
 
-
-
 pub struct MarbleTexture {
     depth: usize,
     scale: f32,
@@ -215,10 +213,14 @@ impl MarbleTexture {
 
 impl Texture for MarbleTexture {
     fn sample(&self, _uv: (f32, f32), point: &Vec3) -> Vec3 {
-        Vec3::one() * 0.5 *  (1. + f32::sin(self.scale * point.z + 10. * TurbulenceTexture::turb(self.depth, *point)))
+        Vec3::one()
+            * 0.5
+            * (1.
+                + f32::sin(
+                    self.scale * point.z + 10. * TurbulenceTexture::turb(self.depth, *point),
+                ))
     }
 }
-
 
 pub struct ImageTexture<T> {
     image: T,

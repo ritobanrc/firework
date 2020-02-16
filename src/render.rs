@@ -1,9 +1,9 @@
 use crate::aabb::AABB;
 use crate::material::Material;
-use crate::util::sphere_uv;
+use crate::util::{sphere_uv, Axis};
 use crate::Ray;
 use tiny_rng::LcRng;
-use ultraviolet::Vec3;
+use ultraviolet::{Vec2, Vec3};
 
 const SKY_BLUE: Vec3 = Vec3 {
     x: 0.5,
@@ -122,44 +122,67 @@ impl Hitable for Sphere {
     }
 }
 
-pub struct XYRect {
-    x0: f32,
-    x1: f32,
-    y0: f32,
-    y1: f32,
+pub type XYRect = AARect<{ Axis::X }, { Axis::Y }>;
+pub type YZRect = AARect<{ Axis::Y }, { Axis::Z }>;
+pub type XZRect = AARect<{ Axis::X }, { Axis::Z }>;
+
+pub struct AARect<const A1: Axis, const A2: Axis> {
+    min: Vec2,
+    max: Vec2,
     k: f32,
-    material: Box<dyn Material + Sync>
+    material: Box<dyn Material + Sync>,
 }
 
-impl XYRect {
-    pub fn new(x0: f32, x1: f32, y0: f32, y1: f32, k: f32, material: Box<dyn Material + Sync>) -> Self {
-        XYRect {
-            x0, x1, y0, y1, k, material
+impl<const A1: Axis, const A2: Axis> AARect<{ A1 }, { A2 }> {
+    pub fn new(
+        a1_min: f32,
+        a1_max: f32,
+        a2_min: f32,
+        a2_max: f32,
+        k: f32,
+        material: Box<dyn Material + Sync>,
+    ) -> Self {
+        AARect {
+            min: Vec2::new(a1_min, a2_min),
+            max: Vec2::new(a1_max, a2_max),
+            k,
+            material,
         }
     }
 }
 
-impl Hitable for XYRect {
+impl<const A1: Axis, const A2: Axis> Hitable for AARect<{ A1 }, { A2 }> {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
-        let t = (self.k - r.origin().z) / r.direction().z;
+        let t = (self.k - r.origin()[Axis::other(A1, A2) as usize])
+            / r.direction()[Axis::other(A1, A2) as usize];
         if t < t_min || t > t_max {
-            return None
+            return None;
         }
         let point = r.point(t);
-        if point.x < self.x0 || point.x > self.x1 || point.y < self.y0 || point.y > self.y1 {
-            return None
+        if point[A1 as usize] < self.min.x
+            || point[A1 as usize] > self.max.x
+            || point[A2 as usize] < self.min.y
+            || point[A2 as usize] > self.max.y
+        {
+            return None;
         }
         Some(RaycastHit {
             t,
             point,
-            normal: Vec3::unit_z(),
+            normal: Axis::other(A1, A2).unit_vec(),
             material: self.material.as_ref(),
-            uv: ((point.x - self.x0)/(self.x1 - self.x0), (point.y - self.y0)/(self.y1 - self.y0))
+            uv: (
+                (point[A1 as usize] - self.min.x) / (self.max.x - self.min.x),
+                (point[A2 as usize] - self.min.y) / (self.max.y - self.min.y),
+            ),
         })
     }
 
     fn bounding_box(&self) -> Option<AABB> {
-        Some(AABB::new(Vec3::new(self.x0, self.y0, self.k), Vec3::new(self.x1, self.y1, self.k)))
+        Some(AABB::new(
+            Vec3::new(self.min.x, self.min.y, self.k),
+            Vec3::new(self.max.x, self.max.y, self.k),
+        ))
     }
 }
 

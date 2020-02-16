@@ -1,6 +1,7 @@
 #![feature(array_value_iter)]
 #![feature(exclusive_range_pattern)]
 #![feature(clamp)]
+#![feature(const_generics)]
 
 use crate::bvh::BVHNode;
 use crate::camera::Camera;
@@ -34,7 +35,7 @@ const SAMPLES: usize = 100;
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
-    let cam_pos = Vec3::new(6., 1., 2.);
+    let cam_pos = Vec3::new(6., 5., 0.5);
     let look_at = Vec3::new(0., 0., 0.);
     let camera = Camera::new(
         cam_pos,

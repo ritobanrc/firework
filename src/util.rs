@@ -107,3 +107,32 @@ pub fn sphere_uv(point: &Vec3) -> (f32, f32) {
     let v = (theta + PI / 2.) / PI;
     (u, v)
 }
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(usize)]
+pub enum Axis {
+    X = 0usize,
+    Y = 1usize,
+    Z = 2usize,
+}
+
+impl Axis {
+    #[inline(always)]
+    pub fn other(a: Axis, b: Axis) -> Axis {
+        match (a, b) {
+            (Axis::X, Axis::Y) | (Axis::Y, Axis::X) => (Axis::Z),
+            (Axis::Y, Axis::Z) | (Axis::Z, Axis::Y) => (Axis::X),
+            (Axis::X, Axis::Z) | (Axis::Z, Axis::X) => (Axis::Y),
+            _ => panic!("Axis::other called, but a == b"),
+        }
+    }
+
+    #[inline(always)]
+    pub fn unit_vec(self) -> Vec3 {
+        match self {
+            Axis::X => Vec3::unit_x(),
+            Axis::Y => Vec3::unit_y(),
+            Axis::Z => Vec3::unit_z(),
+        }
+    }
+}

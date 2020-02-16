@@ -1,5 +1,5 @@
 use crate::material::{ConstantMat, DielectricMat, LambertianMat, MetalMat};
-use crate::render::{HitableList, Sphere, XYRect};
+use crate::render::{HitableList, Sphere, XYRect, XZRect, YZRect};
 use crate::texture::*;
 use crate::util::InRange;
 use image::open;
@@ -72,7 +72,6 @@ pub fn earth_scene() -> HitableList {
     world
 }
 
-
 pub fn light_scene() -> HitableList {
     let mut world = HitableList::new();
     world.list_mut().push(Box::new(Sphere::new(
@@ -87,10 +86,28 @@ pub fn light_scene() -> HitableList {
         Box::new(LambertianMat::new(Box::new(MarbleTexture::new(7, 5.)))),
     )));
 
-    world.list_mut().push(Box::new(XYRect::new(3., 5., 1., 3., -2., Box::new(ConstantMat::new(Box::new(ConstantTexture::new(Vec3::new(4., 4., 4.))))))));
+    world.list_mut().push(Box::new(XYRect::new(
+        3.,
+        5.,
+        1.,
+        3.,
+        -2.,
+        Box::new(ConstantMat::new(Box::new(ConstantTexture::new(Vec3::new(
+            4., 4., 4.,
+        ))))),
+    )));
+    world.list_mut().push(Box::new(XZRect::new(
+        3.,
+        5.,
+        1.,
+        3.,
+        4.,
+        Box::new(ConstantMat::new(Box::new(ConstantTexture::new(Vec3::new(
+            4., 2., 0.,
+        ))))),
+    )));
     world
 }
-
 
 pub fn random_scene(rand: &mut impl Rand) -> HitableList {
     let mut world = HitableList::new();
