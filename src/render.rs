@@ -124,7 +124,7 @@ impl Hitable for Sphere {
 
 pub type XYRect = AARect<{ Axis::X }, { Axis::Y }>;
 pub type YZRect = AARect<{ Axis::Y }, { Axis::Z }>;
-pub type XZRect = AARect<{ Axis::X }, { Axis::Z }>;
+pub type XZRect = AARect<{ Axis::Z }, { Axis::X }>;
 
 pub struct AARect<const A1: Axis, const A2: Axis> {
     min: Vec2,
@@ -179,12 +179,45 @@ impl<const A1: Axis, const A2: Axis> Hitable for AARect<{ A1 }, { A2 }> {
     }
 
     fn bounding_box(&self) -> Option<AABB> {
+        let mut min = [0f32; 3];
+        min[A1 as usize] = self.min.x;
+        min[A2 as usize] = self.min.y;
+        min[Axis::other(A1, A2) as usize] = self.k - 0.01;
+        let mut max = [0f32; 3];
+        max[A1 as usize] = self.max.x;
+        max[A2 as usize] = self.max.y;
+        max[Axis::other(A1, A2) as usize] = self.k + 0.01;
         Some(AABB::new(
-            Vec3::new(self.min.x, self.min.y, self.k),
-            Vec3::new(self.max.x, self.max.y, self.k),
+                min.into(), max.into()
         ))
     }
 }
+
+pub struct FlipNormals {
+    obj: Box<dyn Hitable + Sync>
+}
+
+impl FlipNormals {
+    pub fn new(obj: Box<dyn Hitable + Sync>) -> Self {
+        FlipNormals { obj }
+    }
+}
+
+impl Hitable for FlipNormals {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
+        if let Some(mut hit) = self.obj.hit(r, t_min, t_max) {
+            hit.normal = -hit.normal;
+            Some(hit)
+        } else {
+            None
+        }
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        self.obj.bounding_box()
+    }
+}
+
 
 pub struct HitableList(Vec<Box<dyn Hitable + Sync>>);
 

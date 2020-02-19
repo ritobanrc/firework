@@ -35,21 +35,21 @@ const SAMPLES: usize = 100;
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
-    let cam_pos = Vec3::new(6., 5., 0.5);
-    let look_at = Vec3::new(0., 0., 0.);
+    let cam_pos = Vec3::new(278., 278., -800.);
+    let look_at = Vec3::new(278., 278., 0.);
     let camera = Camera::new(
         cam_pos,
         look_at,
         Vec3::unit_y(),
-        60.0,
-        0.1,
-        (cam_pos - look_at).mag(),
+        40.0,
+        0.0,
+        10.,
     );
 
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.
     let mut rng = LcRng::new(buffer.len() as u64);
-    let mut world = light_scene();
+    let mut world = cornell_box();
 
     let root_bvh = BVHNode::new(&mut world);
 
@@ -77,8 +77,8 @@ fn main() {
         *pix = colori.into();
 
         let count = completed.fetch_add(1, Ordering::SeqCst);
-        if idx % 1000 == 0 {
-            println!("Completed {}/{}", count / 1000, WIDTH * HEIGHT / 1000)
+        if idx % 10000 == 0 {
+            println!("Completed {}/{}", count / 10000, WIDTH * HEIGHT / 10000)
         }
     });
 
