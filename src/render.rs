@@ -36,8 +36,8 @@ pub fn color(r: &Ray, world: &dyn Hitable, depth: usize, rand: &mut LcRng) -> Ve
             emit
         }
     } else {
-        //Vec3::zero()
-        sky_color(r)
+        Vec3::zero()
+        //sky_color(r)
     }
 }
 
@@ -237,6 +237,10 @@ impl Rect3d {
             pos, size, faces
         }
     }
+
+    pub fn with_size(size: Vec3, material: impl Fn() -> Box<dyn Material + Sync>) -> Rect3d {
+        Rect3d::new(Vec3::zero(), size, material)
+    }
 }
 
 impl Hitable for Rect3d {
@@ -249,6 +253,122 @@ impl Hitable for Rect3d {
     }
 }
 
+pub struct Translate {
+    offset: Vec3,
+    obj: Box<dyn Hitable + Sync>
+}
+
+impl Translate {
+    pub fn new(obj: Box<dyn Hitable + Sync>, offset: Vec3) -> Translate {
+        Translate { obj, offset }
+    }
+}
+
+impl Hitable for Translate {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
+        let new_ray = Ray::new(*r.origin() - self.offset, *r.direction());
+        if let Some(mut hit) = self.obj.hit(&new_ray, t_min, t_max) {
+            hit.point += self.offset;
+            Some(hit)
+        } else {
+            None
+        }
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        self.obj.bounding_box().map(|bb| {
+            AABB::new(bb.min + self.offset, bb.max + self.offset)
+        })
+    }
+}
+
+pub struct RotateY {
+    angle: f32,
+    sin_theta: f32,
+    cos_theta: f32,
+    aabb: Option<AABB>,
+    obj: Box<dyn Hitable + Sync>
+}
+
+impl RotateY {
+    pub fn new(angle: f32, obj: Box<dyn Hitable + Sync>) -> RotateY {
+        use std::f32::consts::PI;
+        let theta = angle * PI / 180.;
+        let sin_theta = theta.sin();
+        let cos_theta = theta.cos();
+
+        let bbox = obj.bounding_box();
+
+        // TODO: Make code look like Rust instead of C
+        let new_bbox = if let Some(bbox) = bbox {
+            let mut min = 10e9 * Vec3::one();
+            let mut max = -10e9 * Vec3::one();
+            for i in 0..2 {
+                for j in 0..2 {
+                    for k in 0..2 {
+                        let i = i as f32;
+                        let j = j as f32;
+                        let k = k as f32;
+                        let x = i * bbox.max.x + (1. - i) * bbox.min.x;
+                        let y = j * bbox.max.y + (1. - j) * bbox.min.y;
+                        let z = k * bbox.max.z + (1. - k) * bbox.min.z;
+
+                        let newx = cos_theta * x + sin_theta * z;
+                        let newz = -sin_theta * x + cos_theta * z;
+                        let tester = Vec3::new(newx, y, newz);
+
+                        for c in 0..3 { 
+                            if tester[c] > max[c] {
+                                max[c] = tester[c]
+                            } if tester[c] < min[c] {
+                                min[c] = tester[c]
+                            }
+                        }
+                    }
+                }
+            }
+            Some(AABB::new(min, max))
+        } else {
+            None
+        };
+
+        RotateY {
+            angle,
+            sin_theta, cos_theta,
+            aabb: new_bbox,
+            obj
+        }
+    }
+}
+
+impl Hitable for RotateY {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
+        let origin = Vec3::new(self.cos_theta * r.origin().x - self.sin_theta * r.origin().z,
+                               r.origin().y,
+                               self.sin_theta * r.origin().x + self.cos_theta * r.origin().z);
+        let direction = Vec3::new(self.cos_theta * r.direction().x - self.sin_theta * r.direction().z,
+                               r.direction().y,
+                               self.sin_theta * r.direction().x + self.cos_theta * r.direction().z);
+        let new_r = Ray::new(origin, direction);
+        if let Some(mut hit) = self.obj.hit(&new_r, t_min, t_max) {
+            hit.point = Vec3::new(self.cos_theta * hit.point.x + self.sin_theta * hit.point.z, 
+                                  hit.point.y,
+                                  -self.sin_theta * hit.point.x + self.cos_theta * hit.point.z);
+            hit.normal = Vec3::new(self.cos_theta * hit.normal.x + self.sin_theta * hit.normal.z,
+                                   hit.normal.y,
+                                   -self.sin_theta * hit.normal.x + self.cos_theta * hit.normal.z);
+
+            Some(hit)
+        } else {
+            None
+        }
+    }
+
+
+    fn bounding_box(&self) -> Option<AABB> {
+        self.aabb.clone()
+    }
+}
 
 pub struct HitableList(Vec<Box<dyn Hitable + Sync>>);
 

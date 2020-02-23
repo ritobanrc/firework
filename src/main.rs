@@ -27,8 +27,8 @@ mod scenes;
 mod texture;
 mod util;
 
-const WIDTH: usize = 300;
-const HEIGHT: usize = 300;
+const WIDTH: usize = 500;
+const HEIGHT: usize = 500;
 
 const SAMPLES: usize = 500;
 
@@ -36,7 +36,7 @@ fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
     //let cam_pos = Vec3::new(278., 278., -800.);
-    let cam_pos = Vec3::new(278., 350., -800.);
+    let cam_pos = Vec3::new(278., 278., -800.);
     let look_at = Vec3::new(278., 278., 0.);
     let camera = Camera::new(
         cam_pos,
