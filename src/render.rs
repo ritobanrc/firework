@@ -25,22 +25,19 @@ fn sky_color(r: &Ray) -> Vec3 {
 
 pub fn color(r: &Ray, world: &dyn Hitable, depth: usize, rand: &mut LcRng) -> Vec3 {
     if let Some(hit) = world.hit(r, 0.001, 2e9) {
-        if depth < 4 {
+        if depth < 10 {
+            let emit = hit.material.emit(hit.uv, &hit.point);
             if let Some(result) = hit.material.scatter(r, &hit, rand) {
-                if result.scattered.direction().mag_sq() < 0.01 {
-                    result.attenuation
-                } else {
-                    result.attenuation * color(&result.scattered, world, depth + 1, rand)
-                }
+                emit + result.attenuation * color(&result.scattered, world, depth + 1, rand)
             } else {
-                Vec3::zero()
+                emit
             }
         } else {
             Vec3::zero()
         }
     } else {
         //sky_color(r)
-        Vec3::zero()
+        0.01 * Vec3::one()
     }
 }
 

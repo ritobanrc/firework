@@ -27,8 +27,8 @@ mod scenes;
 mod texture;
 mod util;
 
-const WIDTH: usize = 960;
-const HEIGHT: usize = 540;
+const WIDTH: usize = 480;
+const HEIGHT: usize = 270;
 
 const SAMPLES: usize = 100;
 

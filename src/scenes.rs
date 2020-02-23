@@ -10,9 +10,10 @@ pub fn cornell_box() -> HitableList {
     let mut world = HitableList::new();
 
     let red = LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.65, 0.05, 0.05))));
-    let white1 = LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.2, 0.23, 0.73))));
-    let white2 = ConstantMat::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73))));
+    let white1 = LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73))));
+    let white2 = LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73))));
     let white3 = LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73))));
+    //let white3 = MetalMat::new(Vec3::new(0.73, 0.73, 0.73), 0.5);
     let green = LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.12, 0.45, 0.15))));
 
     let light = ConstantMat::new(Box::new(ConstantTexture::new(Vec3::new(15., 15., 15.))));
@@ -20,15 +21,13 @@ pub fn cornell_box() -> HitableList {
     world.list_mut().push(Box::new(FlipNormals::new(Box::new(YZRect::new(0., 555., 0., 555., 555., Box::new(green))))));
     world.list_mut().push(Box::new(YZRect::new(0., 555., 0., 555., 0., Box::new(red))));
 
-    //world.list_mut().push(Box::new(XZRect::new(213., 343., 227., 332., 550., Box::new(light))));
+    world.list_mut().push(Box::new(XZRect::new(213., 343., 227., 332., 554., Box::new(light))));
 
     world.list_mut().push(Box::new(
             XZRect::new(0., 555., 0., 555., 0., Box::new(white1))));
-    //world.list_mut().push(Box::new(
-            //XZRect::new(0., 555., 0., 555., -10., Box::new(white2))));
     world.list_mut().push(Box::new(FlipNormals::new(Box::new(XZRect::new(0., 555., 0., 555., 555., Box::new(white2))))));
-    //
-    world.list_mut().push(Box::new(Sphere::new(Vec3::new(222., 111., 444.), 100., Box::new(light))));
+
+    //world.list_mut().push(Box::new(Sphere::new(Vec3::new(277.5, 277.5, 400.), 50., Box::new(light))));
 
     world.list_mut().push(Box::new(FlipNormals::new(Box::new(XYRect::new(0., 555., 0., 555., 555., Box::new(white3))))));
     //world.list_mut().push(Box::new(FlipNormals::new(Box::new(XYRect::new(111., 222., 111., 222., 222., Box::new(white2))))));

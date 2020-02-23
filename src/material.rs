@@ -7,6 +7,10 @@ use ultraviolet::Vec3;
 
 pub trait Material {
     fn scatter(&self, r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult>;
+
+    fn emit(&self, uv: (f32, f32), point: &Vec3) -> Vec3 {
+        Vec3::zero()
+    }
 }
 
 pub struct ScatterResult {
@@ -133,11 +137,10 @@ impl ConstantMat {
 
 impl Material for ConstantMat {
     fn scatter(&self, _r_in: &Ray, hit: &RaycastHit, _rand: &mut LcRng) -> Option<ScatterResult> {
-        // TODO: Use proper UV Mapping
-        let attenuation = self.albedo.sample(hit.uv, &hit.point);
-        Some(ScatterResult {
-            scattered: Ray::new(hit.point, Vec3::zero()),
-            attenuation,
-        })
+        None
+    }
+
+    fn emit(&self, uv: (f32, f32), point: &Vec3) -> Vec3 {
+        self.albedo.sample(uv, point)
     }
 }
