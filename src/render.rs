@@ -25,19 +25,19 @@ fn sky_color(r: &Ray) -> Vec3 {
 
 pub fn color(r: &Ray, world: &dyn Hitable, depth: usize, rand: &mut LcRng) -> Vec3 {
     if let Some(hit) = world.hit(r, 0.001, 2e9) {
+        let emit = hit.material.emit(hit.uv, &hit.point);
         if depth < 10 {
-            let emit = hit.material.emit(hit.uv, &hit.point);
             if let Some(result) = hit.material.scatter(r, &hit, rand) {
                 emit + result.attenuation * color(&result.scattered, world, depth + 1, rand)
             } else {
                 emit
             }
         } else {
-            Vec3::zero()
+            emit
         }
     } else {
-        //sky_color(r)
-        0.01 * Vec3::one()
+        //Vec3::zero()
+        sky_color(r)
     }
 }
 
@@ -121,15 +121,14 @@ impl Hitable for Sphere {
 
 pub type XYRect = AARect<{ Axis::X }, { Axis::Y }>;
 pub type YZRect = AARect<{ Axis::Y }, { Axis::Z }>;
-pub type XZRect = AARect<{ Axis::Z }, { Axis::X }>;
+pub type XZRect = AARect<{ Axis::X }, { Axis::Z }>;
 
 pub struct AARect<const A1: Axis, const A2: Axis> {
     min: Vec2,
     max: Vec2,
     k: f32,
     material: Box<dyn Material + Sync>,
-}
-
+} 
 impl<const A1: Axis, const A2: Axis> AARect<{ A1 }, { A2 }> {
     pub fn new(
         a1_min: f32,
@@ -212,6 +211,41 @@ impl Hitable for FlipNormals {
 
     fn bounding_box(&self) -> Option<AABB> {
         self.obj.bounding_box()
+    }
+}
+
+pub struct Rect3d {
+    pos: Vec3,
+    size: Vec3,
+    faces: HitableList,
+}
+
+impl Rect3d {
+    pub fn new(pos: Vec3, size: Vec3, material: impl Fn() -> Box<dyn Material + Sync>) -> Rect3d {
+        let mut faces = HitableList::new();
+        faces.list_mut().push(Box::new(XYRect::new(pos.x, pos.x + size.x, pos.y, pos.y + size.y, pos.z + size.z, material())));
+        faces.list_mut().push(Box::new(FlipNormals::new(Box::new(
+                                       XYRect::new(pos.x, pos.x + size.x, pos.y, pos.y + size.y, pos.z, material())))));
+        faces.list_mut().push(Box::new(XZRect::new(pos.x, pos.x + size.x, pos.z, pos.z + size.z, pos.y + size.y, material())));
+        faces.list_mut().push(Box::new(FlipNormals::new(Box::new(
+                XZRect::new(pos.x, pos.x + size.x, pos.z, pos.z + size.z, pos.y, material())))));
+        faces.list_mut().push(Box::new(YZRect::new(pos.y, pos.y + size.y, pos.z, pos.z + size.z, pos.x + size.x, material())));
+        faces.list_mut().push(Box::new(FlipNormals::new(Box::new(
+                    YZRect::new(pos.y, pos.y + size.y, pos.z, pos.z + size.z, pos.x, material())))));
+
+        Rect3d {
+            pos, size, faces
+        }
+    }
+}
+
+impl Hitable for Rect3d {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
+        self.faces.hit(r, t_min, t_max)
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        Some(AABB::new(self.pos, self.pos + self.size))
     }
 }
 

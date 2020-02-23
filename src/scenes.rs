@@ -1,5 +1,5 @@
 use crate::material::{ConstantMat, DielectricMat, LambertianMat, MetalMat};
-use crate::render::{HitableList, Sphere, XYRect, XZRect, YZRect, FlipNormals};
+use crate::render::{HitableList, Sphere, XYRect, XZRect, YZRect, FlipNormals, Rect3d};
 use crate::texture::*;
 use crate::util::InRange;
 use image::open;
@@ -27,10 +27,32 @@ pub fn cornell_box() -> HitableList {
             XZRect::new(0., 555., 0., 555., 0., Box::new(white1))));
     world.list_mut().push(Box::new(FlipNormals::new(Box::new(XZRect::new(0., 555., 0., 555., 555., Box::new(white2))))));
 
-    //world.list_mut().push(Box::new(Sphere::new(Vec3::new(277.5, 277.5, 400.), 50., Box::new(light))));
-
     world.list_mut().push(Box::new(FlipNormals::new(Box::new(XYRect::new(0., 555., 0., 555., 555., Box::new(white3))))));
-    //world.list_mut().push(Box::new(FlipNormals::new(Box::new(XYRect::new(111., 222., 111., 222., 222., Box::new(white2))))));
+
+
+    world.list_mut().push(Box::new(Rect3d::new(Vec3::new(130., 0., 65.), Vec3::new(165., 165., 165.), || {
+        Box::new(LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73)))))
+    })));
+
+
+    world.list_mut().push(Box::new(Rect3d::new(Vec3::new(265., 0., 295.), Vec3::new(165., 330., 165.), || {
+        Box::new(LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73)))))
+    })));
+
+    world
+}
+
+pub fn cubes() -> HitableList {
+    let mut world = HitableList::new();
+
+    world.list_mut().push(Box::new(Rect3d::new(Vec3::new(400., 0., 65.), Vec3::new(165., 165., 165.), || {
+        Box::new(LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73)))))
+    })));
+
+
+    world.list_mut().push(Box::new(Rect3d::new(Vec3::new(20., 500., 295.), Vec3::new(165., 330., 165.), || {
+        Box::new(LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73)))))
+    })));
 
     world
 }
