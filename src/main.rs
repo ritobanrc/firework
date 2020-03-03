@@ -38,14 +38,7 @@ fn main() {
     //let cam_pos = Vec3::new(278., 278., -800.);
     let cam_pos = Vec3::new(278., 278., -800.);
     let look_at = Vec3::new(278., 278., 0.);
-    let camera = Camera::new(
-        cam_pos,
-        look_at,
-        Vec3::unit_y(),
-        40.0,
-        0.0,
-        10.,
-    );
+    let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
 
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.

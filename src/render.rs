@@ -128,7 +128,7 @@ pub struct AARect<const A1: Axis, const A2: Axis> {
     max: Vec2,
     k: f32,
     material: Box<dyn Material + Sync>,
-} 
+}
 impl<const A1: Axis, const A2: Axis> AARect<{ A1 }, { A2 }> {
     pub fn new(
         a1_min: f32,
@@ -183,14 +183,12 @@ impl<const A1: Axis, const A2: Axis> Hitable for AARect<{ A1 }, { A2 }> {
         max[A1 as usize] = self.max.x;
         max[A2 as usize] = self.max.y;
         max[Axis::other(A1, A2) as usize] = self.k + 0.01;
-        Some(AABB::new(
-                min.into(), max.into()
-        ))
+        Some(AABB::new(min.into(), max.into()))
     }
 }
 
 pub struct FlipNormals {
-    obj: Box<dyn Hitable + Sync>
+    obj: Box<dyn Hitable + Sync>,
 }
 
 impl FlipNormals {
@@ -223,19 +221,62 @@ pub struct Rect3d {
 impl Rect3d {
     pub fn new(pos: Vec3, size: Vec3, material: impl Fn() -> Box<dyn Material + Sync>) -> Rect3d {
         let mut faces = HitableList::new();
-        faces.list_mut().push(Box::new(XYRect::new(pos.x, pos.x + size.x, pos.y, pos.y + size.y, pos.z + size.z, material())));
-        faces.list_mut().push(Box::new(FlipNormals::new(Box::new(
-                                       XYRect::new(pos.x, pos.x + size.x, pos.y, pos.y + size.y, pos.z, material())))));
-        faces.list_mut().push(Box::new(XZRect::new(pos.x, pos.x + size.x, pos.z, pos.z + size.z, pos.y + size.y, material())));
-        faces.list_mut().push(Box::new(FlipNormals::new(Box::new(
-                XZRect::new(pos.x, pos.x + size.x, pos.z, pos.z + size.z, pos.y, material())))));
-        faces.list_mut().push(Box::new(YZRect::new(pos.y, pos.y + size.y, pos.z, pos.z + size.z, pos.x + size.x, material())));
-        faces.list_mut().push(Box::new(FlipNormals::new(Box::new(
-                    YZRect::new(pos.y, pos.y + size.y, pos.z, pos.z + size.z, pos.x, material())))));
+        faces.list_mut().push(Box::new(XYRect::new(
+            pos.x,
+            pos.x + size.x,
+            pos.y,
+            pos.y + size.y,
+            pos.z + size.z,
+            material(),
+        )));
+        faces
+            .list_mut()
+            .push(Box::new(FlipNormals::new(Box::new(XYRect::new(
+                pos.x,
+                pos.x + size.x,
+                pos.y,
+                pos.y + size.y,
+                pos.z,
+                material(),
+            )))));
+        faces.list_mut().push(Box::new(XZRect::new(
+            pos.x,
+            pos.x + size.x,
+            pos.z,
+            pos.z + size.z,
+            pos.y + size.y,
+            material(),
+        )));
+        faces
+            .list_mut()
+            .push(Box::new(FlipNormals::new(Box::new(XZRect::new(
+                pos.x,
+                pos.x + size.x,
+                pos.z,
+                pos.z + size.z,
+                pos.y,
+                material(),
+            )))));
+        faces.list_mut().push(Box::new(YZRect::new(
+            pos.y,
+            pos.y + size.y,
+            pos.z,
+            pos.z + size.z,
+            pos.x + size.x,
+            material(),
+        )));
+        faces
+            .list_mut()
+            .push(Box::new(FlipNormals::new(Box::new(YZRect::new(
+                pos.y,
+                pos.y + size.y,
+                pos.z,
+                pos.z + size.z,
+                pos.x,
+                material(),
+            )))));
 
-        Rect3d {
-            pos, size, faces
-        }
+        Rect3d { pos, size, faces }
     }
 
     pub fn with_size(size: Vec3, material: impl Fn() -> Box<dyn Material + Sync>) -> Rect3d {
@@ -255,7 +296,7 @@ impl Hitable for Rect3d {
 
 pub struct Translate {
     offset: Vec3,
-    obj: Box<dyn Hitable + Sync>
+    obj: Box<dyn Hitable + Sync>,
 }
 
 impl Translate {
@@ -276,9 +317,9 @@ impl Hitable for Translate {
     }
 
     fn bounding_box(&self) -> Option<AABB> {
-        self.obj.bounding_box().map(|bb| {
-            AABB::new(bb.min + self.offset, bb.max + self.offset)
-        })
+        self.obj
+            .bounding_box()
+            .map(|bb| AABB::new(bb.min + self.offset, bb.max + self.offset))
     }
 }
 
@@ -287,7 +328,7 @@ pub struct RotateY {
     sin_theta: f32,
     cos_theta: f32,
     aabb: Option<AABB>,
-    obj: Box<dyn Hitable + Sync>
+    obj: Box<dyn Hitable + Sync>,
 }
 
 impl RotateY {
@@ -317,10 +358,11 @@ impl RotateY {
                         let newz = -sin_theta * x + cos_theta * z;
                         let tester = Vec3::new(newx, y, newz);
 
-                        for c in 0..3 { 
+                        for c in 0..3 {
                             if tester[c] > max[c] {
                                 max[c] = tester[c]
-                            } if tester[c] < min[c] {
+                            }
+                            if tester[c] < min[c] {
                                 min[c] = tester[c]
                             }
                         }
@@ -334,36 +376,44 @@ impl RotateY {
 
         RotateY {
             angle,
-            sin_theta, cos_theta,
+            sin_theta,
+            cos_theta,
             aabb: new_bbox,
-            obj
+            obj,
         }
     }
 }
 
 impl Hitable for RotateY {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
-        let origin = Vec3::new(self.cos_theta * r.origin().x - self.sin_theta * r.origin().z,
-                               r.origin().y,
-                               self.sin_theta * r.origin().x + self.cos_theta * r.origin().z);
-        let direction = Vec3::new(self.cos_theta * r.direction().x - self.sin_theta * r.direction().z,
-                               r.direction().y,
-                               self.sin_theta * r.direction().x + self.cos_theta * r.direction().z);
+        let origin = Vec3::new(
+            self.cos_theta * r.origin().x - self.sin_theta * r.origin().z,
+            r.origin().y,
+            self.sin_theta * r.origin().x + self.cos_theta * r.origin().z,
+        );
+        let direction = Vec3::new(
+            self.cos_theta * r.direction().x - self.sin_theta * r.direction().z,
+            r.direction().y,
+            self.sin_theta * r.direction().x + self.cos_theta * r.direction().z,
+        );
         let new_r = Ray::new(origin, direction);
         if let Some(mut hit) = self.obj.hit(&new_r, t_min, t_max) {
-            hit.point = Vec3::new(self.cos_theta * hit.point.x + self.sin_theta * hit.point.z, 
-                                  hit.point.y,
-                                  -self.sin_theta * hit.point.x + self.cos_theta * hit.point.z);
-            hit.normal = Vec3::new(self.cos_theta * hit.normal.x + self.sin_theta * hit.normal.z,
-                                   hit.normal.y,
-                                   -self.sin_theta * hit.normal.x + self.cos_theta * hit.normal.z);
+            hit.point = Vec3::new(
+                self.cos_theta * hit.point.x + self.sin_theta * hit.point.z,
+                hit.point.y,
+                -self.sin_theta * hit.point.x + self.cos_theta * hit.point.z,
+            );
+            hit.normal = Vec3::new(
+                self.cos_theta * hit.normal.x + self.sin_theta * hit.normal.z,
+                hit.normal.y,
+                -self.sin_theta * hit.normal.x + self.cos_theta * hit.normal.z,
+            );
 
             Some(hit)
         } else {
             None
         }
     }
-
 
     fn bounding_box(&self) -> Option<AABB> {
         self.aabb.clone()
