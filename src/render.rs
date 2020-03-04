@@ -1,8 +1,9 @@
 use crate::aabb::AABB;
-use crate::material::Material;
+use crate::material::{Material, IsotropicMat};
+use crate::texture::Texture;
 use crate::util::{sphere_uv, Axis};
 use crate::Ray;
-use tiny_rng::LcRng;
+use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Vec2, Vec3};
 
 const SKY_BLUE: Vec3 = Vec3 {
@@ -24,7 +25,7 @@ fn sky_color(r: &Ray) -> Vec3 {
 }
 
 pub fn color(r: &Ray, world: &dyn Hitable, depth: usize, rand: &mut LcRng) -> Vec3 {
-    if let Some(hit) = world.hit(r, 0.001, 2e9) {
+    if let Some(hit) = world.hit(r, 0.001, 2e9, rand) {
         let emit = hit.material.emit(hit.uv, &hit.point);
         if depth < 10 {
             if let Some(result) = hit.material.scatter(r, &hit, rand) {
@@ -50,7 +51,7 @@ pub struct RaycastHit<'a> {
 }
 
 pub trait Hitable {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit>;
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit>;
     fn bounding_box(&self) -> Option<AABB>;
 }
 
@@ -71,7 +72,7 @@ impl Sphere {
 }
 
 impl Hitable for Sphere {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit<'_>> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, _rand: &mut LcRng) -> Option<RaycastHit<'_>> {
         let v = *r.origin() - self.center;
         let a = r.direction().dot(*r.direction());
         let b = v.dot(*r.direction());
@@ -148,7 +149,7 @@ impl<const A1: Axis, const A2: Axis> AARect<{ A1 }, { A2 }> {
 }
 
 impl<const A1: Axis, const A2: Axis> Hitable for AARect<{ A1 }, { A2 }> {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, _rand: &mut LcRng) -> Option<RaycastHit> {
         let t = (self.k - r.origin()[Axis::other(A1, A2) as usize])
             / r.direction()[Axis::other(A1, A2) as usize];
         if t < t_min || t > t_max {
@@ -198,8 +199,8 @@ impl FlipNormals {
 }
 
 impl Hitable for FlipNormals {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
-        if let Some(mut hit) = self.obj.hit(r, t_min, t_max) {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
+        if let Some(mut hit) = self.obj.hit(r, t_min, t_max, rand) {
             hit.normal = -hit.normal;
             Some(hit)
         } else {
@@ -285,8 +286,8 @@ impl Rect3d {
 }
 
 impl Hitable for Rect3d {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
-        self.faces.hit(r, t_min, t_max)
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
+        self.faces.hit(r, t_min, t_max, rand)
     }
 
     fn bounding_box(&self) -> Option<AABB> {
@@ -306,9 +307,9 @@ impl Translate {
 }
 
 impl Hitable for Translate {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
         let new_ray = Ray::new(*r.origin() - self.offset, *r.direction());
-        if let Some(mut hit) = self.obj.hit(&new_ray, t_min, t_max) {
+        if let Some(mut hit) = self.obj.hit(&new_ray, t_min, t_max, rand) {
             hit.point += self.offset;
             Some(hit)
         } else {
@@ -385,7 +386,7 @@ impl RotateY {
 }
 
 impl Hitable for RotateY {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
         let origin = Vec3::new(
             self.cos_theta * r.origin().x - self.sin_theta * r.origin().z,
             r.origin().y,
@@ -397,7 +398,7 @@ impl Hitable for RotateY {
             self.sin_theta * r.direction().x + self.cos_theta * r.direction().z,
         );
         let new_r = Ray::new(origin, direction);
-        if let Some(mut hit) = self.obj.hit(&new_r, t_min, t_max) {
+        if let Some(mut hit) = self.obj.hit(&new_r, t_min, t_max, rand) {
             hit.point = Vec3::new(
                 self.cos_theta * hit.point.x + self.sin_theta * hit.point.z,
                 hit.point.y,
@@ -420,6 +421,55 @@ impl Hitable for RotateY {
     }
 }
 
+pub struct ConstantMedium {
+    obj: Box<dyn Hitable + Sync>,
+    density: f32,
+    material: Box<dyn Material + Sync>,
+}
+
+impl ConstantMedium {
+    pub fn new(obj: Box<dyn Hitable + Sync>, density: f32, texture: Box<dyn Texture + Sync>) -> Self {
+        ConstantMedium {
+            obj, density, 
+            material: Box::new(IsotropicMat::new(texture)),
+        }
+    }
+}
+
+impl Hitable for ConstantMedium {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
+        if let Some(mut rec1) = self.obj.hit(r, -std::f32::MAX, std::f32::MAX, rand) {
+            if let Some(mut rec2) = self.obj.hit(r, rec1.t + 0.0001, std::f32::MAX, rand) {
+                rec1.t = rec1.t.max(t_min);
+                rec2.t = rec2.t.min(t_max);
+                if rec1.t >= rec2.t {
+                    return None
+                }
+                rec1.t = rec1.t.max(0.);
+                let dist_inside_boundary = (rec2.t - rec1.t)*r.direction().mag();
+                let hit_distance = -(1. / self.density) * rand.rand_f32().log10();
+
+                if hit_distance < dist_inside_boundary {
+                    let t = rec1.t + hit_distance / r.direction().mag();
+                    return Some(RaycastHit {
+                        t, 
+                        point: r.point(t),
+                        normal: Vec3::unit_y(), // arbitrary
+                        material: self.material.as_ref(),
+                        uv: (0., 0.)
+                    })
+                }
+            }
+        }
+        None
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        self.obj.bounding_box()
+    }
+
+}
+
 pub struct HitableList(Vec<Box<dyn Hitable + Sync>>);
 
 impl HitableList {
@@ -437,11 +487,11 @@ impl HitableList {
 }
 
 impl Hitable for HitableList {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
         let mut last_hit = None;
         let mut closest = t_max;
         for hitable in self.0.iter() {
-            let new_hit = hitable.hit(r, t_min, closest);
+            let new_hit = hitable.hit(r, t_min, closest, rand);
             if let Some(hit) = new_hit {
                 closest = hit.t;
                 last_hit = Some(hit);

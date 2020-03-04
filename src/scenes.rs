@@ -1,12 +1,110 @@
 use crate::material::{ConstantMat, DielectricMat, LambertianMat, MetalMat};
 use crate::render::{
-    FlipNormals, HitableList, Rect3d, RotateY, Sphere, Translate, XYRect, XZRect, YZRect,
+    FlipNormals, HitableList, Rect3d, RotateY, Sphere, Translate, XYRect, XZRect, YZRect, ConstantMedium,
 };
 use crate::texture::*;
 use crate::util::InRange;
 use image::open;
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
+
+
+
+pub fn cornell_smoke() -> HitableList {
+    let mut world = HitableList::new();
+
+    let red = LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.65, 0.05, 0.05))));
+    let white1 = LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73))));
+    let white2 = LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73))));
+    let white3 = LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.73, 0.73, 0.73))));
+    let green = LambertianMat::new(Box::new(ConstantTexture::new(Vec3::new(0.12, 0.45, 0.15))));
+
+    let light = ConstantMat::new(Box::new(ConstantTexture::new(Vec3::new(7., 7., 7.))));
+
+    world
+        .list_mut()
+        .push(Box::new(FlipNormals::new(Box::new(YZRect::new(
+            0.,
+            555.,
+            0.,
+            555.,
+            555.,
+            Box::new(green),
+        )))));
+    world
+        .list_mut()
+        .push(Box::new(YZRect::new(0., 555., 0., 555., 0., Box::new(red))));
+
+    world.list_mut().push(Box::new(XZRect::new(
+        113.,
+        443.,
+        127.,
+        432.,
+        554.,
+        Box::new(light),
+    )));
+
+    world.list_mut().push(Box::new(XZRect::new(
+        0.,
+        555.,
+        0.,
+        555.,
+        0.,
+        Box::new(white1),
+    )));
+    world
+        .list_mut()
+        .push(Box::new(FlipNormals::new(Box::new(XZRect::new(
+            0.,
+            555.,
+            0.,
+            555.,
+            555.,
+            Box::new(white2),
+        )))));
+
+    world
+        .list_mut()
+        .push(Box::new(FlipNormals::new(Box::new(XYRect::new(
+            0.,
+            555.,
+            0.,
+            555.,
+            555.,
+            Box::new(white3),
+        )))));
+
+    let b1 = Box::new(Translate::new(
+        Box::new(RotateY::new(
+            -18.,
+            Box::new(Rect3d::with_size(Vec3::new(165., 165., 165.), || {
+                Box::new(LambertianMat::new(Box::new(ConstantTexture::new(
+                    Vec3::new(0.73, 0.73, 0.73),
+                ))))
+            })),
+        )),
+        Vec3::new(130., 0., 65.),
+    ));
+
+
+    let b2 = Box::new(Translate::new(
+        Box::new(RotateY::new(
+            15.,
+            Box::new(Rect3d::with_size(Vec3::new(165., 330., 165.), || {
+                Box::new(LambertianMat::new(Box::new(ConstantTexture::new(
+                    Vec3::new(0.73, 0.73, 0.73),
+                ))))
+            })),
+        )),
+        Vec3::new(265., 0., 295.),
+    ));
+
+    world.list_mut().push(Box::new(ConstantMedium::new(b1, 0.01, Box::new(ConstantTexture::new(Vec3::one())))));
+    world.list_mut().push(Box::new(ConstantMedium::new(b2, 0.01, Box::new(ConstantTexture::new(Vec3::zero())))));
+
+    world
+}
+
 
 pub fn cornell_box() -> HitableList {
     let mut world = HitableList::new();

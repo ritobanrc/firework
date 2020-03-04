@@ -43,7 +43,7 @@ fn main() {
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.
     let mut rng = LcRng::new(buffer.len() as u64);
-    let mut world = cornell_box();
+    let mut world = cornell_smoke();
 
     let root_bvh = BVHNode::new(&mut world);
 
@@ -65,7 +65,7 @@ fn main() {
         }
 
         total_color /= SAMPLES as f32;
-        total_color = total_color.map(f32::sqrt);
+        total_color = total_color.map(f32::sqrt).map(|x| x.clamp(0., 1.));
 
         let colori: Color = total_color.into();
         *pix = colori.into();

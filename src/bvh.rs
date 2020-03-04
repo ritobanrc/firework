@@ -1,6 +1,7 @@
 use crate::aabb::AABB;
 use crate::ray::Ray;
 use crate::render::{Hitable, HitableList, RaycastHit};
+use tiny_rng::LcRng;
 
 pub struct BVHNode<'a> {
     next: BVHNodeVariant<'a>,
@@ -109,14 +110,14 @@ impl<'a> BVHNode<'a> {
 }
 
 impl Hitable for BVHNode<'_> {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<RaycastHit> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
         if self.aabb.hit(r, t_min, t_max) {
             match &self.next {
-                BVHNodeVariant::Leaf(a) => a.hit(r, t_min, t_max),
+                BVHNodeVariant::Leaf(a) => a.hit(r, t_min, t_max, rand),
                 BVHNodeVariant::DoubleLeaf(a, b) => {
                     // Note this is identifical
-                    let left_hit = a.hit(r, t_min, t_max);
-                    let right_hit = b.hit(r, t_min, t_max);
+                    let left_hit = a.hit(r, t_min, t_max, rand);
+                    let right_hit = b.hit(r, t_min, t_max, rand);
                     match (left_hit, right_hit) {
                         (None, None) => None,
                         (Some(hit), None) => Some(hit),
@@ -128,8 +129,8 @@ impl Hitable for BVHNode<'_> {
                     }
                 }
                 BVHNodeVariant::Branch(a, b) => {
-                    let left_hit = a.hit(r, t_min, t_max);
-                    let right_hit = b.hit(r, t_min, t_max);
+                    let left_hit = a.hit(r, t_min, t_max, rand);
+                    let right_hit = b.hit(r, t_min, t_max, rand);
                     match (left_hit, right_hit) {
                         (None, None) => None,
                         (Some(hit), None) => Some(hit),

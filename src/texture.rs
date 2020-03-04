@@ -1,6 +1,5 @@
-use image::{GenericImageView, Pixel, Primitive, Rgba};
-use std::mem;
-use tiny_rng::{Rand, Rng};
+use image::{GenericImageView, Pixel, Rgba};
+use tiny_rng::Rand;
 use ultraviolet::Vec3;
 
 pub trait Texture {

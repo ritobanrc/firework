@@ -144,3 +144,22 @@ impl Material for ConstantMat {
         self.albedo.sample(uv, point)
     }
 }
+
+pub struct IsotropicMat {
+    texture: Box<dyn Texture + Sync>
+}
+
+impl IsotropicMat {
+    pub fn new(texture: Box<dyn Texture + Sync>) -> Self {
+        IsotropicMat { texture }
+    }
+}
+
+impl Material for IsotropicMat {
+    fn scatter(&self, _r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult> {
+        Some(ScatterResult {
+            attenuation: self.texture.sample(hit.uv, &hit.point),
+            scattered: Ray::new(hit.point, random_in_unit_sphere(rand)),
+        })
+    }
+}
