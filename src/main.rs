@@ -21,16 +21,17 @@ mod aabb;
 mod bvh;
 mod camera;
 mod material;
+mod objects;
 mod ray;
 mod render;
 mod scenes;
 mod texture;
 mod util;
 
-const WIDTH: usize = 500;
-const HEIGHT: usize = 500;
+const WIDTH: usize = 300;
+const HEIGHT: usize = 300;
 
-const SAMPLES: usize = 500;
+const SAMPLES: usize = 100;
 
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
@@ -43,7 +44,7 @@ fn main() {
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.
     let mut rng = LcRng::new(buffer.len() as u64);
-    let mut world = cornell_smoke();
+    let mut world = cornell_box();
 
     let root_bvh = BVHNode::new(&mut world);
 

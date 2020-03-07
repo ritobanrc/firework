@@ -146,7 +146,7 @@ impl Material for ConstantMat {
 }
 
 pub struct IsotropicMat {
-    texture: Box<dyn Texture + Sync>
+    texture: Box<dyn Texture + Sync>,
 }
 
 impl IsotropicMat {

@@ -1,14 +1,11 @@
 use crate::material::{ConstantMat, DielectricMat, LambertianMat, MetalMat};
-use crate::render::{
-    FlipNormals, HitableList, Rect3d, RotateY, Sphere, Translate, XYRect, XZRect, YZRect, ConstantMedium,
-};
+use crate::objects::{ConstantMedium, Rect3d, Sphere, XYRect, XZRect, YZRect};
+use crate::render::{FlipNormals, HitableList, RotateY, Translate};
 use crate::texture::*;
 use crate::util::InRange;
 use image::open;
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
-
-
 
 pub fn cornell_smoke() -> HitableList {
     let mut world = HitableList::new();
@@ -86,7 +83,6 @@ pub fn cornell_smoke() -> HitableList {
         Vec3::new(130., 0., 65.),
     ));
 
-
     let b2 = Box::new(Translate::new(
         Box::new(RotateY::new(
             15.,
@@ -99,12 +95,19 @@ pub fn cornell_smoke() -> HitableList {
         Vec3::new(265., 0., 295.),
     ));
 
-    world.list_mut().push(Box::new(ConstantMedium::new(b1, 0.01, Box::new(ConstantTexture::new(Vec3::one())))));
-    world.list_mut().push(Box::new(ConstantMedium::new(b2, 0.01, Box::new(ConstantTexture::new(Vec3::zero())))));
+    world.list_mut().push(Box::new(ConstantMedium::new(
+        b1,
+        0.01,
+        Box::new(ConstantTexture::new(Vec3::one())),
+    )));
+    world.list_mut().push(Box::new(ConstantMedium::new(
+        b2,
+        0.01,
+        Box::new(ConstantTexture::new(Vec3::zero())),
+    )));
 
     world
 }
-
 
 pub fn cornell_box() -> HitableList {
     let mut world = HitableList::new();
