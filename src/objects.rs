@@ -1,5 +1,5 @@
 use crate::aabb::AABB;
-use crate::material::{IsotropicMat, Material};
+use crate::material::{IsotropicMat, Material, MaterialIdx, MaterialLibrary};
 use crate::ray::Ray;
 use crate::render::{FlipNormals, Hitable, HitableList, RaycastHit};
 use crate::texture::Texture;
@@ -10,11 +10,11 @@ use ultraviolet::{Vec2, Vec3};
 pub struct Sphere {
     center: Vec3,
     radius: f32,
-    material: Box<dyn Material + Sync>,
+    material: MaterialIdx
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f32, material: Box<dyn Material + Sync>) -> Sphere {
+    pub fn new(center: Vec3, radius: f32, material: MaterialIdx) -> Sphere {
         Sphere {
             center,
             radius,
@@ -24,7 +24,7 @@ impl Sphere {
 }
 
 impl Hitable for Sphere {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, _rand: &mut LcRng) -> Option<RaycastHit<'_>> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, _rand: &mut LcRng) -> Option<RaycastHit> {
         let v = *r.origin() - self.center;
         let a = r.direction().dot(*r.direction());
         let b = v.dot(*r.direction());
@@ -53,7 +53,7 @@ impl Hitable for Sphere {
                     t,
                     point,
                     normal: (point - self.center) / self.radius,
-                    material: self.material.as_ref(),
+                    material: self.material,
                     uv: sphere_uv(&((point - self.center) / self.radius)),
                 })
             } else {
@@ -81,7 +81,7 @@ pub struct AARect<const A1: Axis, const A2: Axis> {
     max: Vec2,
     k: f32,
     flip_normal: bool,
-    material: Box<dyn Material + Sync>,
+    material: MaterialIdx,
 }
 impl<const A1: Axis, const A2: Axis> AARect<{ A1 }, { A2 }> {
     // Note, this assumes `flip_normal` is false -- just so I don't have to change all the code
@@ -92,7 +92,7 @@ impl<const A1: Axis, const A2: Axis> AARect<{ A1 }, { A2 }> {
         a2_min: f32,
         a2_max: f32,
         k: f32,
-        material: Box<dyn Material + Sync>,
+        material: MaterialIdx,
     ) -> Self {
         AARect {
             min: Vec2::new(a1_min, a2_min),
@@ -129,7 +129,7 @@ impl<const A1: Axis, const A2: Axis> Hitable for AARect<{ A1 }, { A2 }> {
             t,
             point,
             normal: if self.flip_normal { -normal } else { normal },
-            material: self.material.as_ref(),
+            material: self.material,
             uv: (
                 (point[A1 as usize] - self.min.x) / (self.max.x - self.min.x),
                 (point[A2 as usize] - self.min.y) / (self.max.y - self.min.y),
@@ -199,7 +199,7 @@ pub struct Rect3d {
 }
 
 impl Rect3d {
-    pub fn new(pos: Vec3, size: Vec3, material: impl Fn() -> Box<dyn Material + Sync>) -> Rect3d {
+    pub fn new(pos: Vec3, size: Vec3, material: MaterialIdx) -> Rect3d {
         let faces: Vec<Rect> = vec![
             XYRect::new(
                 pos.x,
@@ -207,7 +207,7 @@ impl Rect3d {
                 pos.y,
                 pos.y + size.y,
                 pos.z + size.z,
-                material(),
+                material,
             )
             .into(),
             XYRect::new(
@@ -216,7 +216,7 @@ impl Rect3d {
                 pos.y,
                 pos.y + size.y,
                 pos.z,
-                material(),
+                material,
             )
             .flip_normal()
             .into(),
@@ -226,7 +226,7 @@ impl Rect3d {
                 pos.z,
                 pos.z + size.z,
                 pos.y + size.y,
-                material(),
+                material,
             )
             .into(),
             XZRect::new(
@@ -235,7 +235,7 @@ impl Rect3d {
                 pos.z,
                 pos.z + size.z,
                 pos.y,
-                material(),
+                material,
             )
             .flip_normal()
             .into(),
@@ -245,7 +245,7 @@ impl Rect3d {
                 pos.z,
                 pos.z + size.z,
                 pos.x + size.x,
-                material(),
+                material,
             )
             .into(),
             YZRect::new(
@@ -254,7 +254,7 @@ impl Rect3d {
                 pos.z,
                 pos.z + size.z,
                 pos.x,
-                material(),
+                material,
             )
             .flip_normal()
             .into(),
@@ -263,7 +263,8 @@ impl Rect3d {
         Rect3d { pos, size, faces }
     }
 
-    pub fn with_size(size: Vec3, material: impl Fn() -> Box<dyn Material + Sync>) -> Rect3d {
+    // TODO: Figure out Transformations
+    pub fn with_size(size: Vec3, material: MaterialIdx) -> Rect3d {
         Rect3d::new(Vec3::zero(), size, material)
     }
 }
@@ -290,7 +291,7 @@ impl Hitable for Rect3d {
 pub struct ConstantMedium {
     obj: Box<dyn Hitable + Sync>,
     density: f32,
-    material: Box<dyn Material + Sync>,
+    material: MaterialIdx,
 }
 
 impl ConstantMedium {
@@ -298,11 +299,12 @@ impl ConstantMedium {
         obj: Box<dyn Hitable + Sync>,
         density: f32,
         texture: Box<dyn Texture + Sync>,
+        library: &mut MaterialLibrary,
     ) -> Self {
         ConstantMedium {
             obj,
             density,
-            material: Box::new(IsotropicMat::new(texture)),
+            material: library.add_material(IsotropicMat::new(texture)),
         }
     }
 }
@@ -326,7 +328,7 @@ impl Hitable for ConstantMedium {
                         t,
                         point: r.point(t),
                         normal: Vec3::unit_y(), // arbitrary
-                        material: self.material.as_ref(),
+                        material: self.material,
                         uv: (0., 0.),
                     });
                 }
