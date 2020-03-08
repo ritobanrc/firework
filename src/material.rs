@@ -15,14 +15,15 @@ use ultraviolet::Vec3;
 /// Used to index in a `MaterialLibrary`.
 pub type MaterialIdx = usize;
 
-
 pub struct MaterialLibrary<'a> {
     library: Vec<Box<dyn Material + Sync + 'a>>, // TODO: Remove the layer of indirection here
 }
 
 impl<'a> MaterialLibrary<'a> {
     pub fn new() -> MaterialLibrary<'a> {
-        MaterialLibrary { library: Vec::new() }
+        MaterialLibrary {
+            library: Vec::new(),
+        }
     }
 
     /// Adds a material to the `MaterialLibrary` and returns it's `MaterialIdx`

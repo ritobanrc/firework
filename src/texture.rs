@@ -154,15 +154,15 @@ fn grad(hash: usize, x: f32, y: f32, z: f32) -> f32 {
     let u = if h < 8 { x } else { y };
     let v = if h < 4 {
         y
-    } else {
-        if h == 12 || h == 14 {
+    } else if h == 12 || h == 14 {
             x
-        } else {
+    } else {
             z
-        }
     };
 
-    return if h & 1 == 0 { u } else { -u } + if h & 2 == 0 { v } else { -v };
+    let u = if h & 1 == 0 { u } else { -u };
+    let v = if h & 2 == 0 { v } else { -v };
+    u + v
 }
 
 fn lerp(t: f32, a: f32, b: f32) -> f32 {

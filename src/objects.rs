@@ -10,7 +10,7 @@ use ultraviolet::{Vec2, Vec3};
 pub struct Sphere {
     center: Vec3,
     radius: f32,
-    material: MaterialIdx
+    material: MaterialIdx,
 }
 
 impl Sphere {
@@ -295,14 +295,14 @@ pub struct ConstantMedium {
 }
 
 impl ConstantMedium {
-    pub fn new(
-        obj: Box<dyn Hitable + Sync>,
+    pub fn new<T: Hitable + Sync + 'static>(
+        obj: T,
         density: f32,
         texture: Box<dyn Texture + Sync>,
         library: &mut MaterialLibrary,
     ) -> Self {
         ConstantMedium {
-            obj,
+            obj: Box::new(obj),
             density,
             material: library.add_material(IsotropicMat::new(texture)),
         }

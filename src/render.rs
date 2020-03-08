@@ -23,12 +23,21 @@ fn sky_color(r: &Ray) -> Vec3 {
 }
 
 /// Performs the ray tracing for a given ray in the world and returns it's color.
-pub fn color(r: &Ray, world: &dyn Hitable, materials: &MaterialLibrary, depth: usize, rand: &mut LcRng) -> Vec3 {
+pub fn color(
+    r: &Ray,
+    world: &dyn Hitable,
+    materials: &MaterialLibrary,
+    depth: usize,
+    rand: &mut LcRng,
+) -> Vec3 {
     if let Some(hit) = world.hit(r, 0.001, 2e9, rand) {
-        let emit = materials.get_material(hit.material).emit(hit.uv, &hit.point);
+        let emit = materials
+            .get_material(hit.material)
+            .emit(hit.uv, &hit.point);
         if depth < 10 {
             if let Some(result) = materials.get_material(hit.material).scatter(r, &hit, rand) {
-                emit + result.attenuation * color(&result.scattered, world, materials, depth + 1, rand)
+                emit + result.attenuation
+                    * color(&result.scattered, world, materials, depth + 1, rand)
             } else {
                 emit
             }

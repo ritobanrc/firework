@@ -1,4 +1,4 @@
-use crate::material::{MaterialLibrary, ConstantMat, DielectricMat, LambertianMat, MetalMat};
+use crate::material::{ConstantMat, DielectricMat, LambertianMat, MaterialLibrary, MetalMat};
 use crate::objects::{ConstantMedium, Rect3d, Sphere, XYRect, XZRect, YZRect};
 use crate::render::{FlipNormals, HitableList, RotateY, Translate};
 use crate::texture::*;
@@ -7,165 +7,114 @@ use image::open;
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
 
-
-
 pub fn cornell_smoke() -> (HitableList, MaterialLibrary<'static>) {
     let mut world = HitableList::new();
-
     let mut materials = MaterialLibrary::new();
-
 
     let red = materials.add_material(LambertianMat::with_color(Vec3::new(0.65, 0.05, 0.05)));
     let white = materials.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
     let green = materials.add_material(LambertianMat::with_color(Vec3::new(0.12, 0.45, 0.15)));
 
-    let light = materials.add_material(ConstantMat::new(Box::new(ConstantTexture::new(Vec3::new(7., 7., 7.)))));
+    let light = materials.add_material(ConstantMat::new(Box::new(ConstantTexture::new(
+        Vec3::new(7., 7., 7.),
+    ))));
 
     world
         .list_mut()
         .push(Box::new(FlipNormals::new(Box::new(YZRect::new(
-            0.,
-            555.,
-            0.,
-            555.,
-            555.,
-            green,
+            0., 555., 0., 555., 555., green,
         )))));
     world
         .list_mut()
         .push(Box::new(YZRect::new(0., 555., 0., 555., 0., red)));
 
-    world.list_mut().push(Box::new(XZRect::new(
-        113.,
-        443.,
-        127.,
-        432.,
-        554.,
-        light,
-    )));
+    world
+        .list_mut()
+        .push(Box::new(XZRect::new(113., 443., 127., 432., 554., light)));
 
-    world.list_mut().push(Box::new(XZRect::new(
-        0.,
-        555.,
-        0.,
-        555.,
-        0.,
-        white,
-    )));
+    world
+        .list_mut()
+        .push(Box::new(XZRect::new(0., 555., 0., 555., 0., white)));
     world
         .list_mut()
         .push(Box::new(FlipNormals::new(Box::new(XZRect::new(
-            0.,
-            555.,
-            0.,
-            555.,
-            555.,
-            white,
+            0., 555., 0., 555., 555., white,
         )))));
 
     world
         .list_mut()
         .push(Box::new(FlipNormals::new(Box::new(XYRect::new(
-            0.,
-            555.,
-            0.,
-            555.,
-            555.,
-            white,
+            0., 555., 0., 555., 555., white,
         )))));
 
     world.list_mut().push(Box::new(Translate::new(
         Box::new(RotateY::new(
             -18.,
             Box::new(ConstantMedium::new(
-                    Box::new(Rect3d::with_size(Vec3::new(165., 165., 165.), 0)),
-                    0.01,
-                    Box::new(ConstantTexture::new(Vec3::one())),
-                    &mut materials
-                    ))
+                Rect3d::with_size(Vec3::new(165., 165., 165.), 0),
+                0.01,
+                Box::new(ConstantTexture::new(Vec3::one())),
+                &mut materials,
+            )),
         )),
         Vec3::new(130., 0., 65.),
     )));
 
     world.list_mut().push(Box::new(Translate::new(
-                Box::new(RotateY::new(
-                        15.,
-                        Box::new(ConstantMedium::new(Box::new(
-                                    Rect3d::with_size(Vec3::new(165., 330., 165.), 0)), 
-                                0.01,
-                                Box::new(ConstantTexture::new(Vec3::zero())),
-                                &mut materials))
-                        )),
-                        Vec3::new(265., 0., 295.),
-                        )));
+        Box::new(RotateY::new(
+            15.,
+            Box::new(ConstantMedium::new(
+                Rect3d::with_size(Vec3::new(165., 330., 165.), 0),
+                0.01,
+                Box::new(ConstantTexture::new(Vec3::zero())),
+                &mut materials,
+            )),
+        )),
+        Vec3::new(265., 0., 295.),
+    )));
 
     (world, materials)
 }
-
 
 pub fn cornell_box() -> (HitableList, MaterialLibrary<'static>) {
     let mut world = HitableList::new();
 
     let mut materials = MaterialLibrary::new();
 
-
     let red = materials.add_material(LambertianMat::with_color(Vec3::new(0.65, 0.05, 0.05)));
     let white = materials.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
     let green = materials.add_material(LambertianMat::with_color(Vec3::new(0.12, 0.45, 0.15)));
 
-    let light = materials.add_material(ConstantMat::new(Box::new(ConstantTexture::new(Vec3::new(15., 15., 15.)))));
+    let light = materials.add_material(ConstantMat::new(Box::new(ConstantTexture::new(
+        Vec3::new(15., 15., 15.),
+    ))));
 
     world
         .list_mut()
         .push(Box::new(FlipNormals::new(Box::new(YZRect::new(
-            0.,
-            555.,
-            0.,
-            555.,
-            555.,
-            green,
+            0., 555., 0., 555., 555., green,
         )))));
     world
         .list_mut()
         .push(Box::new(YZRect::new(0., 555., 0., 555., 0., red)));
 
-    world.list_mut().push(Box::new(XZRect::new(
-        213.,
-        343.,
-        227.,
-        332.,
-        554.,
-        light,
-    )));
+    world
+        .list_mut()
+        .push(Box::new(XZRect::new(213., 343., 227., 332., 554., light)));
 
-    world.list_mut().push(Box::new(XZRect::new(
-        0.,
-        555.,
-        0.,
-        555.,
-        0.,
-        white,
-    )));
+    world
+        .list_mut()
+        .push(Box::new(XZRect::new(0., 555., 0., 555., 0., white)));
     world
         .list_mut()
         .push(Box::new(FlipNormals::new(Box::new(XZRect::new(
-            0.,
-            555.,
-            0.,
-            555.,
-            555.,
-            white,
+            0., 555., 0., 555., 555., white,
         )))));
 
     world
         .list_mut()
         .push(Box::new(FlipNormals::new(Box::new(XYRect::new(
-            0.,
-            555.,
-            0.,
-            555.,
-            555.,
-            white,
+            0., 555., 0., 555., 555., white,
         )))));
 
     world.list_mut().push(Box::new(Translate::new(

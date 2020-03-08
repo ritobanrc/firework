@@ -21,6 +21,18 @@ Camera and World are specified awkwardly.
 
 **Solution**: Wrap everything in a `Scene` struct.
 
+Boxes everywhere
+
+**Solution**: Get rid of the boxes everywhere
+
+```rust
+let mut world = HitableList::new();
+let mut materials = MaterialLibrary::new();
+
+
+let red = materials.add_material(LambertianMat::with_color(Vec3::new(0.65, 0.05, 0.05)));
+```
+
 ## Render the Scene
 
 ```rust
