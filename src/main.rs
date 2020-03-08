@@ -28,10 +28,10 @@ mod scenes;
 mod texture;
 mod util;
 
-const WIDTH: usize = 300;
-const HEIGHT: usize = 300;
+const WIDTH: usize = 500;
+const HEIGHT: usize = 500;
 
-const SAMPLES: usize = 100;
+const SAMPLES: usize = 500;
 
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];

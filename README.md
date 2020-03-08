@@ -14,4 +14,4 @@ Major changes
 
 ![The Default Output](render.png)
 
-Rendered in 372 s. 
+Rendered in 109 s. 
