@@ -3,6 +3,7 @@ use crate::material::{Material, MaterialIdx, MaterialLibrary};
 use crate::Ray;
 use tiny_rng::LcRng;
 use ultraviolet::Vec3;
+use itertools::Itertools;
 
 const SKY_BLUE: Vec3 = Vec3 {
     x: 0.5,
@@ -15,6 +16,14 @@ const SKY_WHITE: Vec3 = Vec3 {
     z: 1.,
 };
 
+pub struct RenderObject {
+    obj: Box<dyn Hitable + Sync>,
+    position: Vec3,
+    rotation: Vec3,
+}
+
+/// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
+/// TODO: Don't have hardcoded SKY_BLUE and SKY_WHITE colors.
 fn sky_color(r: &Ray) -> Vec3 {
     let dir = r.direction().normalized();
     // Take the y (from -1 to +1) and map it to 0..1
@@ -118,7 +127,7 @@ impl Hitable for Translate {
 }
 
 pub struct RotateY {
-    angle: f32,
+    _angle: f32,
     sin_theta: f32,
     cos_theta: f32,
     aabb: Option<AABB>,
@@ -134,33 +143,30 @@ impl RotateY {
 
         let bbox = obj.bounding_box();
 
-        // TODO: Make code look like Rust instead of C
+
+        // Create the bounding box for the rotated object.
         let new_bbox = if let Some(bbox) = bbox {
             let mut min = 10e9 * Vec3::one();
             let mut max = -10e9 * Vec3::one();
-            for i in 0..2 {
-                for j in 0..2 {
-                    for k in 0..2 {
-                        let i = i as f32;
-                        let j = j as f32;
-                        let k = k as f32;
-                        let x = i * bbox.max.x + (1. - i) * bbox.min.x;
-                        let y = j * bbox.max.y + (1. - j) * bbox.min.y;
-                        let z = k * bbox.max.z + (1. - k) * bbox.min.z;
 
-                        let newx = cos_theta * x + sin_theta * z;
-                        let newz = -sin_theta * x + cos_theta * z;
-                        let tester = Vec3::new(newx, y, newz);
+            // For each corner of the bounding box
+            for (i, j, k) in iproduct!(0..2, 0..2, 0..2) {
+                // Get the position of the corner
+                let x = if i == 0 { bbox.min.x } else { bbox.max.x };
+                let y = if j == 0 { bbox.min.y } else { bbox.max.y };
+                let z = if k == 0 { bbox.min.z } else { bbox.max.z };
 
-                        for c in 0..3 {
-                            if tester[c] > max[c] {
-                                max[c] = tester[c]
-                            }
-                            if tester[c] < min[c] {
-                                min[c] = tester[c]
-                            }
-                        }
-                    }
+                // Calculate the rotated positions. To rotate something in 2D (i.e., around the Y
+                // axis)
+                let newx = cos_theta * x + sin_theta * z;
+                let newz = -sin_theta * x + cos_theta * z;
+                let tester = Vec3::new(newx, y, newz);
+
+                // Make the bounding box as big as possible. It starts "negative", and then gets
+                // bigger to include every vertex on each axis.
+                for c in 0..3 {
+                    max[c] = tester[c].max(max[c]);
+                    min[c] = tester[c].min(min[c]);
                 }
             }
             Some(AABB::new(min, max))
@@ -169,7 +175,7 @@ impl RotateY {
         };
 
         RotateY {
-            angle,
+            _angle: angle,
             sin_theta,
             cos_theta,
             aabb: new_bbox,
