@@ -1,6 +1,6 @@
 use crate::aabb::AABB;
 use crate::ray::Ray;
-use crate::render::{Hitable, HitableList, RaycastHit};
+use crate::render::{Hitable, RaycastHit, RenderObject, RenderObjectIdx, Scene};
 use tiny_rng::LcRng;
 
 pub struct BVHNode<'a> {
@@ -9,17 +9,18 @@ pub struct BVHNode<'a> {
 }
 
 enum BVHNodeVariant<'a> {
-    Leaf(&'a (dyn Hitable + Sync)),
-    DoubleLeaf(&'a (dyn Hitable + Sync), &'a (dyn Hitable + Sync)),
+    Leaf(&'a RenderObject<'a>),
+    DoubleLeaf(&'a RenderObject<'a>, &'a RenderObject<'a>),
     Branch(Box<BVHNode<'a>>, Box<BVHNode<'a>>),
 }
 
 impl<'a> BVHNode<'a> {
-    pub fn new(list: &'a mut HitableList) -> Self {
-        BVHNode::new_helper(list.list_mut(), 0)
+    pub fn new(scene: &'a mut Scene) -> BVHNode<'a> {
+        // TODO: proper error handling
+        BVHNode::new_helper(&mut scene.render_objects, 0)
     }
 
-    fn new_helper(list: &'a mut [Box<dyn Hitable + Sync>], depth: usize) -> Self {
+    fn new_helper(list: &'a mut [RenderObject], depth: usize) -> Self {
         // TODO: Figure out why bounding_box returns an option
         // TODO: Replace all the `expect`s with proper error handling
         match depth % 3 {
@@ -58,8 +59,8 @@ impl<'a> BVHNode<'a> {
                     .expect("Bounding Box not found in BVH constructor");
                 a_box
                     .min
-                    .x
-                    .partial_cmp(&b_box.min.x)
+                    .z
+                    .partial_cmp(&b_box.min.z)
                     .expect("Float comparison failed in BVH constructor")
             }),
             _ => unreachable!(),
@@ -71,7 +72,7 @@ impl<'a> BVHNode<'a> {
                     .bounding_box()
                     .expect("Bounding Box not found in BVH constructor");
                 BVHNode {
-                    next: BVHNodeVariant::Leaf(list[0].as_ref()),
+                    next: BVHNodeVariant::Leaf(&list[0]),
                     aabb,
                 }
             }
@@ -83,7 +84,7 @@ impl<'a> BVHNode<'a> {
                     .bounding_box()
                     .expect("Bounding Box not found in BVH constructor");
                 BVHNode {
-                    next: BVHNodeVariant::DoubleLeaf(list[0].as_ref(), list[1].as_ref()),
+                    next: BVHNodeVariant::DoubleLeaf(&list[0], &list[1]),
                     aabb: a_box.expand(&b_box),
                 }
             }

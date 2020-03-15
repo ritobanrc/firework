@@ -11,32 +11,6 @@ use ultraviolet::Vec3;
 // we could create a `LibraryIndex` trait, that can `get` in a `Library`, and then implement those
 // for `MaterialIdx` and `MaterialLibrary` respectively (and perhaps use the same system for other
 // pieces)
-
-/// Used to index in a `MaterialLibrary`.
-pub type MaterialIdx = usize;
-
-pub struct MaterialLibrary<'a> {
-    library: Vec<Box<dyn Material + Sync + 'a>>, // TODO: Remove the layer of indirection here
-}
-
-impl<'a> MaterialLibrary<'a> {
-    pub fn new() -> MaterialLibrary<'a> {
-        MaterialLibrary {
-            library: Vec::new(),
-        }
-    }
-
-    /// Adds a material to the `MaterialLibrary` and returns it's `MaterialIdx`
-    pub fn add_material<T: Material + Sync + 'a>(&mut self, mat: T) -> MaterialIdx {
-        self.library.push(Box::new(mat));
-        self.library.len() - 1
-    }
-
-    pub fn get_material(&self, idx: MaterialIdx) -> &(dyn Material + Sync) {
-        self.library[idx].as_ref()
-    }
-}
-
 pub trait Material {
     fn scatter(&self, r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult>;
 

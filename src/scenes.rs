@@ -1,139 +1,94 @@
-use crate::material::{ConstantMat, DielectricMat, LambertianMat, MaterialLibrary, MetalMat};
+use crate::material::{ConstantMat, DielectricMat, LambertianMat, MetalMat};
 use crate::objects::{ConstantMedium, Rect3d, Sphere, XYRect, XZRect, YZRect};
-use crate::render::{FlipNormals, HitableList, RotateY, Translate};
+use crate::render::{RenderObject, Scene};
 use crate::texture::*;
 use crate::util::InRange;
 use image::open;
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
 
-pub fn cornell_smoke() -> (HitableList, MaterialLibrary<'static>) {
-    let mut world = HitableList::new();
-    let mut materials = MaterialLibrary::new();
+pub fn cornell_smoke() -> Scene<'static> {
+    let mut world = Scene::new();
 
-    let red = materials.add_material(LambertianMat::with_color(Vec3::new(0.65, 0.05, 0.05)));
-    let white = materials.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
-    let green = materials.add_material(LambertianMat::with_color(Vec3::new(0.12, 0.45, 0.15)));
+    let red = world.add_material(LambertianMat::with_color(Vec3::new(0.65, 0.05, 0.05)));
+    let white = world.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
+    let green = world.add_material(LambertianMat::with_color(Vec3::new(0.12, 0.45, 0.15)));
+    let light = world.add_material(ConstantMat::with_color(Vec3::new(7., 7., 7.)));
 
-    let light = materials.add_material(ConstantMat::new(Box::new(ConstantTexture::new(
-        Vec3::new(7., 7., 7.),
-    ))));
-
+    world.add_object(RenderObject::new(XZRect::new(
+        113., 443., 127., 432., 554., light,
+    )));
     world
-        .list_mut()
-        .push(Box::new(FlipNormals::new(Box::new(YZRect::new(
-            0., 555., 0., 555., 555., green,
-        )))));
-    world
-        .list_mut()
-        .push(Box::new(YZRect::new(0., 555., 0., 555., 0., red)));
-
-    world
-        .list_mut()
-        .push(Box::new(XZRect::new(113., 443., 127., 432., 554., light)));
-
-    world
-        .list_mut()
-        .push(Box::new(XZRect::new(0., 555., 0., 555., 0., white)));
-    world
-        .list_mut()
-        .push(Box::new(FlipNormals::new(Box::new(XZRect::new(
-            0., 555., 0., 555., 555., white,
-        )))));
-
-    world
-        .list_mut()
-        .push(Box::new(FlipNormals::new(Box::new(XYRect::new(
-            0., 555., 0., 555., 555., white,
-        )))));
-
-    world.list_mut().push(Box::new(Translate::new(
-        Box::new(RotateY::new(
-            -18.,
-            Box::new(ConstantMedium::new(
-                Rect3d::with_size(Vec3::new(165., 165., 165.), 0),
-                0.01,
-                Box::new(ConstantTexture::new(Vec3::one())),
-                &mut materials,
-            )),
-        )),
-        Vec3::new(130., 0., 65.),
+        .add_object(RenderObject::new(YZRect::new(0., 555., 0., 555., 555., green)).flip_normals());
+    world.add_object(RenderObject::new(YZRect::new(0., 555., 0., 555., 0., red)));
+    world.add_object(RenderObject::new(XZRect::new(
+        0., 555., 0., 555., 0., white,
+    )));
+    world.add_object(RenderObject::new(XZRect::new(
+        0., 555., 0., 555., 555., white,
+    )));
+    world.add_object(RenderObject::new(XYRect::new(
+        0., 555., 0., 555., 555., white,
     )));
 
-    world.list_mut().push(Box::new(Translate::new(
-        Box::new(RotateY::new(
-            15.,
-            Box::new(ConstantMedium::new(
-                Rect3d::with_size(Vec3::new(165., 330., 165.), 0),
-                0.01,
-                Box::new(ConstantTexture::new(Vec3::zero())),
-                &mut materials,
-            )),
-        )),
-        Vec3::new(265., 0., 295.),
-    )));
+    let volume1 = RenderObject::new(ConstantMedium::new(
+        Rect3d::with_size(Vec3::new(165., 165., 165.), 0),
+        0.01,
+        Box::new(ConstantTexture::new(Vec3::one())),
+        &mut world,
+    ))
+    .rotate_y(-18.)
+    .position(130., 0., 65.);
+    world.add_object(volume1);
 
-    (world, materials)
+    let volume2 = RenderObject::new(ConstantMedium::new(
+        Rect3d::with_size(Vec3::new(165., 330., 165.), 0),
+        0.01,
+        Box::new(ConstantTexture::new(Vec3::zero())),
+        &mut world,
+    ))
+    .rotate_y(15.)
+    .position(265., 0., 295.);
+
+    world.add_object(volume2);
+
+    world
 }
 
-pub fn cornell_box() -> (HitableList, MaterialLibrary<'static>) {
-    let mut world = HitableList::new();
+pub fn cornell_box() -> Scene<'static> {
+    let mut world = Scene::new();
 
-    let mut materials = MaterialLibrary::new();
+    let red = world.add_material(LambertianMat::with_color(Vec3::new(0.65, 0.05, 0.05)));
+    let white = world.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
+    let green = world.add_material(LambertianMat::with_color(Vec3::new(0.12, 0.45, 0.15)));
 
-    let red = materials.add_material(LambertianMat::with_color(Vec3::new(0.65, 0.05, 0.05)));
-    let white = materials.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
-    let green = materials.add_material(LambertianMat::with_color(Vec3::new(0.12, 0.45, 0.15)));
+    let light = world.add_material(ConstantMat::with_color(Vec3::new(7., 7., 7.)));
 
-    let light = materials.add_material(ConstantMat::new(Box::new(ConstantTexture::new(
-        Vec3::new(15., 15., 15.),
-    ))));
-
-    world
-        .list_mut()
-        .push(Box::new(FlipNormals::new(Box::new(YZRect::new(
-            0., 555., 0., 555., 555., green,
-        )))));
-    world
-        .list_mut()
-        .push(Box::new(YZRect::new(0., 555., 0., 555., 0., red)));
-
-    world
-        .list_mut()
-        .push(Box::new(XZRect::new(213., 343., 227., 332., 554., light)));
-
-    world
-        .list_mut()
-        .push(Box::new(XZRect::new(0., 555., 0., 555., 0., white)));
-    world
-        .list_mut()
-        .push(Box::new(FlipNormals::new(Box::new(XZRect::new(
-            0., 555., 0., 555., 555., white,
-        )))));
-
-    world
-        .list_mut()
-        .push(Box::new(FlipNormals::new(Box::new(XYRect::new(
-            0., 555., 0., 555., 555., white,
-        )))));
-
-    world.list_mut().push(Box::new(Translate::new(
-        Box::new(RotateY::new(
-            -18.,
-            Box::new(Rect3d::with_size(Vec3::new(165., 165., 165.), white)),
-        )),
-        Vec3::new(130., 0., 65.),
+    world.add_object(RenderObject::new(XZRect::new(
+        113., 443., 127., 432., 554., light,
     )));
-
-    world.list_mut().push(Box::new(Translate::new(
-        Box::new(RotateY::new(
-            15.,
-            Box::new(Rect3d::with_size(Vec3::new(165., 330., 165.), white)),
-        )),
-        Vec3::new(265., 0., 295.),
+    world
+        .add_object(RenderObject::new(YZRect::new(0., 555., 0., 555., 555., green)).flip_normals());
+    world.add_object(RenderObject::new(YZRect::new(0., 555., 0., 555., 0., red)));
+    world.add_object(RenderObject::new(XZRect::new(
+        0., 555., 0., 555., 0., white,
     )));
+    world
+        .add_object(RenderObject::new(XZRect::new(0., 555., 0., 555., 555., white)).flip_normals());
+    world
+        .add_object(RenderObject::new(XYRect::new(0., 555., 0., 555., 555., white)).flip_normals());
+    world.add_object(
+        RenderObject::new(Rect3d::with_size(Vec3::new(165., 165., 165.), white))
+            .rotate_y(-18.)
+            .position(130., 0., 65.),
+    );
+    world.add_object(
+        RenderObject::new(Rect3d::with_size(Vec3::new(165., 330., 165.), white))
+            .rotate_y(15.)
+            .position(265., 0., 295.),
+    );
 
-    (world, materials)
+    world
 }
 
 /*

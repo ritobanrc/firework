@@ -1,7 +1,7 @@
 use crate::aabb::AABB;
-use crate::material::{IsotropicMat, Material, MaterialIdx, MaterialLibrary};
+use crate::material::IsotropicMat;
 use crate::ray::Ray;
-use crate::render::{FlipNormals, Hitable, HitableList, RaycastHit};
+use crate::render::{Hitable, MaterialIdx, RaycastHit, Scene};
 use crate::texture::Texture;
 use crate::util::{sphere_uv, Axis};
 use tiny_rng::{LcRng, Rand};
@@ -80,7 +80,7 @@ pub struct AARect<const A1: Axis, const A2: Axis> {
     min: Vec2,
     max: Vec2,
     k: f32,
-    flip_normal: bool,
+    flip_normal: bool, // TODO: Shift this responsibility into the RenderObject
     material: MaterialIdx,
 }
 impl<const A1: Axis, const A2: Axis> AARect<{ A1 }, { A2 }> {
@@ -299,12 +299,12 @@ impl ConstantMedium {
         obj: T,
         density: f32,
         texture: Box<dyn Texture + Sync>,
-        library: &mut MaterialLibrary,
+        scene: &mut Scene,
     ) -> Self {
         ConstantMedium {
             obj: Box::new(obj),
             density,
-            material: library.add_material(IsotropicMat::new(texture)),
+            material: scene.add_material(IsotropicMat::new(texture)),
         }
     }
 }

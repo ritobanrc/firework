@@ -1,9 +1,9 @@
 use crate::aabb::AABB;
-use crate::material::{Material, MaterialIdx, MaterialLibrary};
+use crate::bvh::BVHNode;
+use crate::material::Material;
 use crate::Ray;
 use tiny_rng::LcRng;
 use ultraviolet::Vec3;
-use itertools::Itertools;
 
 const SKY_BLUE: Vec3 = Vec3 {
     x: 0.5,
@@ -16,10 +16,134 @@ const SKY_WHITE: Vec3 = Vec3 {
     z: 1.,
 };
 
-pub struct RenderObject {
-    obj: Box<dyn Hitable + Sync>,
+/// Used to index `Material`s in a `Scene`
+pub type MaterialIdx = usize;
+
+/// Used to index `Material`s in a `Scene`
+pub type RenderObjectIdx = usize;
+
+pub struct Scene<'a> {
+    pub(crate) render_objects: Vec<RenderObject<'a>>,
+    materials: Vec<Box<dyn Material + Sync + 'a>>, // TODO: Remove the layer of indirection here
+}
+
+impl<'a> Scene<'a> {
+    pub fn new() -> Scene<'a> {
+        Scene {
+            render_objects: Vec::new(),
+            materials: Vec::new(),
+        }
+    }
+
+    /// Adds a material to the `Scene` and returns it's `MaterialIdx`
+    pub fn add_object(&mut self, obj: RenderObject<'a>) -> RenderObjectIdx {
+        self.render_objects.push(obj);
+        self.render_objects.len() - 1
+    }
+
+    pub fn get_object(&self, idx: RenderObjectIdx) -> &RenderObject {
+        &self.render_objects[idx]
+    }
+
+    /// Adds a material to the `Scene` and returns it's `MaterialIdx`
+    pub fn add_material<T: Material + Sync + 'a>(&mut self, mat: T) -> MaterialIdx {
+        self.materials.push(Box::new(mat));
+        self.materials.len() - 1
+    }
+
+    pub fn get_material(&self, idx: MaterialIdx) -> &(dyn Material + Sync) {
+        self.materials[idx].as_ref()
+    }
+}
+
+impl Hitable for Scene<'_> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
+        let mut last_hit = None;
+        let mut closest = t_max;
+        for render_obj in &self.render_objects {
+            let new_hit = render_obj.hit(r, t_min, closest, rand);
+            if let Some(hit) = new_hit {
+                closest = hit.t;
+                last_hit = Some(hit);
+            }
+        }
+        last_hit
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        let mut result: Option<AABB> = None;
+        for render_obj in &self.render_objects {
+            let next_box = render_obj.bounding_box();
+            if let Some(next_box) = next_box {
+                if let Some(aabb) = result {
+                    result = Some(aabb.expand(&next_box));
+                } else {
+                    result = Some(next_box);
+                }
+            }
+        }
+        result
+    }
+}
+
+pub struct RenderObject<'a> {
+    obj: Box<dyn Hitable + Sync + 'a>,
     position: Vec3,
-    rotation: Vec3,
+    rotation_y: f32, // TODO: Replace this with ultraviolet::Rotor and/or
+    flip_normals: bool,
+}
+
+impl<'a> RenderObject<'a> {
+    pub fn new<T: Hitable + Sync + 'a>(obj: T) -> RenderObject<'a> {
+        RenderObject {
+            obj: Box::new(obj),
+            position: Vec3::zero(),
+            rotation_y: 0.,
+            flip_normals: false,
+        }
+    }
+
+    /// Sets the position of the `RenderObject`
+    #[inline(always)]
+    pub fn position(mut self, x: f32, y: f32, z: f32) -> RenderObject<'a> {
+        self.position = Vec3::new(x, y, z);
+        self
+    }
+
+    /// Sets the rotation of the `RenderObject` on the Y Axis
+    #[inline(always)]
+    pub fn rotate_y(mut self, angle: f32) -> RenderObject<'a> {
+        self.rotation_y = angle;
+        self
+    }
+
+    /// Sets the `flip_normals` value to the opposite of what it was previously
+    #[inline(always)]
+    pub fn flip_normals(mut self) -> RenderObject<'a> {
+        self.flip_normals = !self.flip_normals;
+        self
+    }
+}
+
+impl Hitable for RenderObject<'_> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
+        let new_ray = Ray::new(*r.origin() - self.position, *r.direction());
+        if let Some(mut hit) = self.obj.hit(&new_ray, t_min, t_max, rand) {
+            hit.point += self.position;
+            if self.flip_normals {
+                hit.normal = -hit.normal;
+            }
+            Some(hit)
+        } else {
+            None
+        }
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        self.obj
+            .bounding_box()
+            .map(|bb| AABB::new(bb.min + self.position, bb.max + self.position))
+    }
 }
 
 /// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
@@ -32,21 +156,13 @@ fn sky_color(r: &Ray) -> Vec3 {
 }
 
 /// Performs the ray tracing for a given ray in the world and returns it's color.
-pub fn color(
-    r: &Ray,
-    world: &dyn Hitable,
-    materials: &MaterialLibrary,
-    depth: usize,
-    rand: &mut LcRng,
-) -> Vec3 {
-    if let Some(hit) = world.hit(r, 0.001, 2e9, rand) {
-        let emit = materials
-            .get_material(hit.material)
-            .emit(hit.uv, &hit.point);
+/// TODO: Solve the inconsistency between `scene` and `bvh_root` arguments
+pub fn color(r: &Ray, scene: &Scene, root: &impl Hitable, depth: usize, rand: &mut LcRng) -> Vec3 {
+    if let Some(hit) = root.hit(r, 0.001, 2e9, rand) {
+        let emit = scene.get_material(hit.material).emit(hit.uv, &hit.point);
         if depth < 10 {
-            if let Some(result) = materials.get_material(hit.material).scatter(r, &hit, rand) {
-                emit + result.attenuation
-                    * color(&result.scattered, world, materials, depth + 1, rand)
+            if let Some(result) = scene.get_material(hit.material).scatter(r, &hit, rand) {
+                emit + result.attenuation * color(&result.scattered, scene, root, depth + 1, rand)
             } else {
                 emit
             }
@@ -71,6 +187,8 @@ pub trait Hitable {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit>;
     fn bounding_box(&self) -> Option<AABB>;
 }
+
+/*
 
 pub struct FlipNormals {
     obj: Box<dyn Hitable + Sync>,
@@ -265,3 +383,4 @@ impl Hitable for HitableList {
         result
     }
 }
+*/

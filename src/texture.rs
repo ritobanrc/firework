@@ -155,9 +155,9 @@ fn grad(hash: usize, x: f32, y: f32, z: f32) -> f32 {
     let v = if h < 4 {
         y
     } else if h == 12 || h == 14 {
-            x
+        x
     } else {
-            z
+        z
     };
 
     let u = if h & 1 == 0 { u } else { -u };
