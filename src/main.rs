@@ -36,14 +36,6 @@ const SAMPLES: usize = 500;
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
-    //let cam_pos = Vec3::new(278., 278., -800.);
-    //let cam_pos = Vec3::new(278., 278., -800.);
-    //let look_at = Vec3::new(278., 278., 0.);
-    //let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
-    let cam_pos = Vec3::new(13., 2., 3.);
-    let look_at = Vec3::new(0., 0., 0.);
-    let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
-
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.
     let mut rng = LcRng::new(buffer.len() as u64);
@@ -64,7 +56,7 @@ fn main() {
 
         for _ in 0..SAMPLES {
             let (u, v): (f32, f32) = pos.into_f32s_with_offset(rng.rand_f32(), rng.rand_f32());
-            let ray = camera.ray(u, v, &mut rng);
+            let ray = scene.ray(u, v, &mut rng);
             total_color += color(&ray, &scene, &root_bvh, 0, &mut rng);
         }
 

@@ -1,8 +1,8 @@
 use crate::aabb::AABB;
-use crate::bvh::BVHNode;
+use crate::camera::Camera;
 use crate::material::Material;
 use crate::Ray;
-use tiny_rng::LcRng;
+use tiny_rng::{LcRng, Rand};
 use ultraviolet::Vec3;
 
 const SKY_BLUE: Vec3 = Vec3 {
@@ -25,13 +25,15 @@ pub type RenderObjectIdx = usize;
 pub struct Scene<'a> {
     pub(crate) render_objects: Vec<RenderObject<'a>>,
     materials: Vec<Box<dyn Material + Sync + 'a>>, // TODO: Remove the layer of indirection here
+    camera: Camera,
 }
 
 impl<'a> Scene<'a> {
-    pub fn new() -> Scene<'a> {
+    pub fn new(camera: Camera) -> Scene<'a> {
         Scene {
             render_objects: Vec::new(),
             materials: Vec::new(),
+            camera
         }
     }
 
@@ -41,6 +43,7 @@ impl<'a> Scene<'a> {
         self.render_objects.len() - 1
     }
 
+    /// Returns a reference to the `RenderObject` stored at the given `RenderObjectIdx`
     pub fn get_object(&self, idx: RenderObjectIdx) -> &RenderObject {
         &self.render_objects[idx]
     }
@@ -51,8 +54,14 @@ impl<'a> Scene<'a> {
         self.materials.len() - 1
     }
 
+    /// Returns a reference to `Material` stored at the given `MaterialIdx`
     pub fn get_material(&self, idx: MaterialIdx) -> &(dyn Material + Sync) {
         self.materials[idx].as_ref()
+    }
+
+    /// Returns the ray for the camera at a given location on the screen
+    pub(crate) fn ray(&self, s: f32, t: f32, rand: &mut impl Rand) -> Ray {
+        self.camera.ray(s, t, rand)
     }
 }
 

@@ -1,5 +1,6 @@
 use crate::material::{ConstantMat, DielectricMat, LambertianMat, MetalMat};
 use crate::objects::{ConstantMedium, Rect3d, Sphere, XYRect, XZRect, YZRect};
+use crate::camera::Camera;
 use crate::render::{RenderObject, Scene};
 use crate::texture::*;
 use crate::util::InRange;
@@ -8,7 +9,11 @@ use tiny_rng::Rand;
 use ultraviolet::Vec3;
 
 pub fn cornell_smoke() -> Scene<'static> {
-    let mut world = Scene::new();
+    let cam_pos = Vec3::new(278., 278., -800.);
+    let look_at = Vec3::new(278., 278., 0.);
+    let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
+
+    let mut world = Scene::new(camera);
 
     let red = world.add_material(LambertianMat::with_color(Vec3::new(0.65, 0.05, 0.05)));
     let white = world.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
@@ -56,7 +61,11 @@ pub fn cornell_smoke() -> Scene<'static> {
 }
 
 pub fn cornell_box() -> Scene<'static> {
-    let mut world = Scene::new();
+    let cam_pos = Vec3::new(278., 278., -800.);
+    let look_at = Vec3::new(278., 278., 0.);
+    let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
+
+    let mut world = Scene::new(camera);
 
     let red = world.add_material(LambertianMat::with_color(Vec3::new(0.65, 0.05, 0.05)));
     let white = world.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
@@ -228,7 +237,10 @@ pub fn light_scene() -> HitableList {
 */
 
 pub fn random_scene(rand: &mut impl Rand) -> Scene {
-    let mut scene = Scene::new();
+    let cam_pos = Vec3::new(13., 2., 3.);
+    let look_at = Vec3::new(0., 0., 0.);
+    let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
+    let mut scene = Scene::new(camera);
 
     let checker_mat = scene.add_material(LambertianMat::new(CheckerTexture::with_colors(
         Vec3::new(0.2, 0.4, 0.1),
