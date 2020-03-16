@@ -44,9 +44,9 @@ fn main() {
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.
     //let mut rng = LcRng::new(buffer.len() as u64);
-    let mut scene = cornell_box();
+    let scene = cornell_box();
 
-    //let root_bvh = BVHNode::new(&mut scene);
+    let root_bvh = BVHNode::new(&scene);
 
     let start = time::Instant::now();
 
@@ -62,7 +62,7 @@ fn main() {
         for _ in 0..SAMPLES {
             let (u, v): (f32, f32) = pos.into_f32s_with_offset(rng.rand_f32(), rng.rand_f32());
             let ray = camera.ray(u, v, &mut rng);
-            total_color += color(&ray, &scene, &scene, 0, &mut rng);
+            total_color += color(&ray, &scene, &root_bvh, 0, &mut rng);
         }
 
         total_color /= SAMPLES as f32;

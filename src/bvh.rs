@@ -1,6 +1,6 @@
 use crate::aabb::AABB;
 use crate::ray::Ray;
-use crate::render::{Hitable, RaycastHit, RenderObject, RenderObjectIdx, Scene};
+use crate::render::{Hitable, RaycastHit, RenderObject, Scene};
 use tiny_rng::LcRng;
 
 pub struct BVHNode<'a> {
@@ -15,83 +15,61 @@ enum BVHNodeVariant<'a> {
 }
 
 impl<'a> BVHNode<'a> {
-    pub fn new(scene: &'a mut Scene) -> BVHNode<'a> {
+    pub fn new(scene: &'a Scene) -> BVHNode<'a> {
         // TODO: proper error handling
-        BVHNode::new_helper(&mut scene.render_objects, 0)
+        let mut indicies: Vec<usize> = (0..scene.render_objects.len()).collect();
+        BVHNode::new_helper(&scene, &mut indicies, 0)
     }
 
-    fn new_helper(list: &'a mut [RenderObject], depth: usize) -> Self {
+    fn new_helper(scene: &'a Scene, indicies: &mut [usize], depth: usize) -> Self {
         // TODO: Figure out why bounding_box returns an option
         // TODO: Replace all the `expect`s with proper error handling
-        match depth % 3 {
-            0 => list.sort_unstable_by(|a, b| {
-                let a_box = a
-                    .bounding_box()
-                    .expect("Bounding Box not found in BVH constructor");
-                let b_box = b
-                    .bounding_box()
-                    .expect("Bounding Box not found in BVH constructor");
-                a_box
-                    .min
-                    .x
-                    .partial_cmp(&b_box.min.x)
-                    .expect("Float comparison failed in BVH constructor")
-            }),
-            1 => list.sort_unstable_by(|a, b| {
-                let a_box = a
-                    .bounding_box()
-                    .expect("Bounding Box not found in BVH constructor");
-                let b_box = b
-                    .bounding_box()
-                    .expect("Bounding Box not found in BVH constructor");
-                a_box
-                    .min
-                    .y
-                    .partial_cmp(&b_box.min.y)
-                    .expect("Float comparison failed in BVH constructor")
-            }),
-            2 => list.sort_unstable_by(|a, b| {
-                let a_box = a
-                    .bounding_box()
-                    .expect("Bounding Box not found in BVH constructor");
-                let b_box = b
-                    .bounding_box()
-                    .expect("Bounding Box not found in BVH constructor");
-                a_box
-                    .min
-                    .z
-                    .partial_cmp(&b_box.min.z)
-                    .expect("Float comparison failed in BVH constructor")
-            }),
-            _ => unreachable!(),
-        };
 
-        match list {
-            [a] => {
-                let aabb = a
+        indicies.sort_unstable_by(|a, b| {
+            let a_box = scene
+                .get_object(*a)
+                .bounding_box()
+                .expect("Bounding Box not found in BVH constructor");
+            let b_box = scene
+                .get_object(*b)
+                .bounding_box()
+                .expect("Bounding Box not found in BVH constructor");
+            a_box.min[depth % 3]
+                .partial_cmp(&b_box.min[depth % 3])
+                .expect("Float comparison failed in BVH constructor")
+        });
+
+        //eprintln!("{:?}", indicies.iter().map(|x| { (x, scene.get_object(*x).bounding_box().unwrap().min) }).collect::<Vec<_>>());
+
+        match indicies {
+            &mut [a] => {
+                let aabb = scene
+                    .get_object(a)
                     .bounding_box()
                     .expect("Bounding Box not found in BVH constructor");
                 BVHNode {
-                    next: BVHNodeVariant::Leaf(&list[0]),
+                    next: BVHNodeVariant::Leaf(&scene.get_object(a)),
                     aabb,
                 }
             }
-            [a, b] => {
-                let a_box = a
+            &mut [a, b] => {
+                let a_box = scene
+                    .get_object(a)
                     .bounding_box()
                     .expect("Bounding Box not found in BVH constructor");
-                let b_box = b
+                let b_box = scene
+                    .get_object(b)
                     .bounding_box()
                     .expect("Bounding Box not found in BVH constructor");
                 BVHNode {
-                    next: BVHNodeVariant::DoubleLeaf(&list[0], &list[1]),
+                    next: BVHNodeVariant::DoubleLeaf(scene.get_object(a), scene.get_object(b)),
                     aabb: a_box.expand(&b_box),
                 }
             }
             l => {
                 let (front_half, back_half) = l.split_at_mut(l.len() / 2);
-                let left = BVHNode::new_helper(front_half, depth + 1);
-                let right = BVHNode::new_helper(back_half, depth + 1);
+                let left = BVHNode::new_helper(&scene, front_half, depth + 1);
+                let right = BVHNode::new_helper(&scene, back_half, depth + 1);
 
                 let left_box = left
                     .bounding_box()
