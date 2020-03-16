@@ -225,18 +225,17 @@ pub fn light_scene() -> HitableList {
     world
 }
 
-pub fn random_scene(rand: &mut impl Rand) -> HitableList {
-    let mut world = HitableList::new();
+*/
 
-    world.list_mut().push(Box::new(Sphere::new(
-        Vec3::new(0., -1000., -1.),
-        1000.,
-        Box::new(LambertianMat::new(Box::new(CheckerTexture::new(
-            Box::new(ConstantTexture::new(Vec3::new(0.2, 0.4, 0.1))),
-            Box::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9))),
-            10.,
-        )))),
+pub fn random_scene(rand: &mut impl Rand) -> Scene {
+    let mut scene = Scene::new();
+
+    let checker_mat = scene.add_material(LambertianMat::new(CheckerTexture::with_colors(
+        Vec3::new(0.2, 0.4, 0.1),
+        Vec3::new(0.9, 0.9, 0.9),
+        10.,
     )));
+    scene.add_object(RenderObject::new(Sphere::new(1000., checker_mat)).position(0., -1000., -1.));
 
     for x in -11..11 {
         for y in -11..11 {
@@ -246,62 +245,37 @@ pub fn random_scene(rand: &mut impl Rand) -> HitableList {
                 y as f32 + 0.9 * rand.rand_f32(),
             );
             if (center - Vec3::new(4., 0.2, 0.9)).mag() > 0.9 {
-                match rand.rand_f32() {
+                let mat = match rand.rand_f32() {
                     x if x.in_range(0.0, 0.8) => {
-                        world.list_mut().push(Box::new(Sphere::new(
-                            center,
-                            0.2,
-                            Box::new(LambertianMat::with_color(Vec3::new(
-                                rand.rand_f32() * rand.rand_f32(),
-                                rand.rand_f32() * rand.rand_f32(),
-                                rand.rand_f32() * rand.rand_f32(),
-                            ))),
-                        )));
+                        scene.add_material(LambertianMat::with_color(Vec3::new(
+                            rand.rand_f32() * rand.rand_f32(),
+                            rand.rand_f32() * rand.rand_f32(),
+                            rand.rand_f32() * rand.rand_f32(),
+                        )))
                     }
-                    x if x.in_range(0.8, 0.95) => {
-                        world.list_mut().push(Box::new(Sphere::new(
-                            center,
-                            0.2,
-                            Box::new(MetalMat::new(
-                                Vec3::new(
-                                    0.5 * (1. + rand.rand_f32()),
-                                    0.5 * (1. + rand.rand_f32()),
-                                    0.5 * (1. + rand.rand_f32()),
-                                ),
-                                0.5 * rand.rand_f32(),
-                            )),
-                        )));
-                    }
-                    x if x.in_range(0.95, 1.) => {
-                        world.list_mut().push(Box::new(Sphere::new(
-                            center,
-                            0.2,
-                            Box::new(DielectricMat::new(1.5)),
-                        )));
-                    }
+                    x if x.in_range(0.8, 0.95) => scene.add_material(MetalMat::new(
+                        Vec3::new(
+                            0.5 * (1. + rand.rand_f32()),
+                            0.5 * (1. + rand.rand_f32()),
+                            0.5 * (1. + rand.rand_f32()),
+                        ),
+                        0.5 * rand.rand_f32(),
+                    )),
+                    x if x.in_range(0.95, 1.) => scene.add_material(DielectricMat::new(1.5)),
                     _ => unreachable!(),
-                }
+                };
+                scene.add_object(RenderObject::new(Sphere::new(0.2, mat)).position_vec(center));
             }
         }
     }
 
-    world.list_mut().push(Box::new(Sphere::new(
-        Vec3::new(0., 1., 0.),
-        1.0,
-        Box::new(DielectricMat::new(1.5)),
-    )));
-    world.list_mut().push(Box::new(Sphere::new(
-        Vec3::new(-4., 1., 0.),
-        1.0,
-        Box::new(LambertianMat::with_color(Vec3::new(0.4, 0.2, 0.1))),
-    )));
-    world.list_mut().push(Box::new(Sphere::new(
-        Vec3::new(4., 1., 0.),
-        1.0,
-        Box::new(MetalMat::new(Vec3::new(0.7, 0.6, 0.5), 0.0)),
-    )));
+    let glass = scene.add_material(DielectricMat::new(1.5));
+    let diffuse = scene.add_material(LambertianMat::with_color(Vec3::new(0.4, 0.2, 0.1)));
+    let metal = scene.add_material(MetalMat::new(Vec3::new(0.7, 0.6, 0.5), 0.0));
 
-    world
+    scene.add_object(RenderObject::new(Sphere::new(1.0, glass)).position(0., 1., 0.));
+    scene.add_object(RenderObject::new(Sphere::new(1.0, diffuse)).position(-4., 1., 0.));
+    scene.add_object(RenderObject::new(Sphere::new(1.0, metal)).position(4., 1., 0.));
+
+    scene
 }
-
-*/

@@ -32,6 +32,14 @@ impl CheckerTexture {
     pub fn new(odd: Box<dyn Texture + Sync>, even: Box<dyn Texture + Sync>, scale: f32) -> Self {
         CheckerTexture { odd, even, scale }
     }
+
+    pub fn with_colors(odd: Vec3, even: Vec3, scale: f32) -> Self {
+        CheckerTexture::new(
+            Box::new(ConstantTexture::new(odd)),
+            Box::new(ConstantTexture::new(even)),
+            scale,
+        )
+    }
 }
 
 impl Texture for CheckerTexture {

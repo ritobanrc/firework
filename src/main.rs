@@ -28,8 +28,8 @@ mod scenes;
 mod texture;
 mod util;
 
-const WIDTH: usize = 500;
-const HEIGHT: usize = 500;
+const WIDTH: usize = 480;
+const HEIGHT: usize = 270;
 
 const SAMPLES: usize = 500;
 
@@ -37,14 +37,17 @@ fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
     //let cam_pos = Vec3::new(278., 278., -800.);
-    let cam_pos = Vec3::new(278., 278., -800.);
-    let look_at = Vec3::new(278., 278., 0.);
+    //let cam_pos = Vec3::new(278., 278., -800.);
+    //let look_at = Vec3::new(278., 278., 0.);
+    //let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
+    let cam_pos = Vec3::new(13., 2., 3.);
+    let look_at = Vec3::new(0., 0., 0.);
     let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
 
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.
-    //let mut rng = LcRng::new(buffer.len() as u64);
-    let scene = cornell_box();
+    let mut rng = LcRng::new(buffer.len() as u64);
+    let scene = random_scene(&mut rng);
 
     let root_bvh = BVHNode::new(&scene);
 

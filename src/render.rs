@@ -110,6 +110,13 @@ impl<'a> RenderObject<'a> {
         self
     }
 
+    /// Sets the position of the `RenderObject`
+    #[inline(always)]
+    pub fn position_vec(mut self, pos: Vec3) -> RenderObject<'a> {
+        self.position = pos;
+        self
+    }
+
     /// Sets the rotation of the `RenderObject` on the Y Axis
     #[inline(always)]
     pub fn rotate_y(mut self, angle: f32) -> RenderObject<'a> {
@@ -170,8 +177,8 @@ pub fn color(r: &Ray, scene: &Scene, root: &impl Hitable, depth: usize, rand: &m
             emit
         }
     } else {
-        Vec3::zero()
-        //sky_color(r)
+        //Vec3::zero()
+        sky_color(r)
     }
 }
 
@@ -189,61 +196,6 @@ pub trait Hitable {
 }
 
 /*
-
-pub struct FlipNormals {
-    obj: Box<dyn Hitable + Sync>,
-}
-
-impl FlipNormals {
-    pub fn new(obj: Box<dyn Hitable + Sync>) -> Self {
-        FlipNormals { obj }
-    }
-}
-
-impl Hitable for FlipNormals {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
-        if let Some(mut hit) = self.obj.hit(r, t_min, t_max, rand) {
-            hit.normal = -hit.normal;
-            Some(hit)
-        } else {
-            None
-        }
-    }
-
-    fn bounding_box(&self) -> Option<AABB> {
-        self.obj.bounding_box()
-    }
-}
-
-pub struct Translate {
-    offset: Vec3,
-    obj: Box<dyn Hitable + Sync>,
-}
-
-impl Translate {
-    pub fn new(obj: Box<dyn Hitable + Sync>, offset: Vec3) -> Translate {
-        Translate { obj, offset }
-    }
-}
-
-impl Hitable for Translate {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
-        let new_ray = Ray::new(*r.origin() - self.offset, *r.direction());
-        if let Some(mut hit) = self.obj.hit(&new_ray, t_min, t_max, rand) {
-            hit.point += self.offset;
-            Some(hit)
-        } else {
-            None
-        }
-    }
-
-    fn bounding_box(&self) -> Option<AABB> {
-        self.obj
-            .bounding_box()
-            .map(|bb| AABB::new(bb.min + self.offset, bb.max + self.offset))
-    }
-}
-
 pub struct RotateY {
     _angle: f32,
     sin_theta: f32,
@@ -335,52 +287,6 @@ impl Hitable for RotateY {
 
     fn bounding_box(&self) -> Option<AABB> {
         self.aabb.clone()
-    }
-}
-
-pub struct HitableList(Vec<Box<dyn Hitable + Sync>>);
-
-impl HitableList {
-    pub fn new() -> HitableList {
-        HitableList(Vec::new())
-    }
-
-    pub fn _list(&self) -> &Vec<Box<dyn Hitable + Sync>> {
-        &self.0
-    }
-
-    pub fn list_mut(&mut self) -> &mut Vec<Box<dyn Hitable + Sync>> {
-        &mut self.0
-    }
-}
-
-impl Hitable for HitableList {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
-        let mut last_hit = None;
-        let mut closest = t_max;
-        for hitable in self.0.iter() {
-            let new_hit = hitable.hit(r, t_min, closest, rand);
-            if let Some(hit) = new_hit {
-                closest = hit.t;
-                last_hit = Some(hit);
-            }
-        }
-        last_hit
-    }
-
-    fn bounding_box(&self) -> Option<AABB> {
-        let mut result: Option<AABB> = None;
-        for hitable in self.0.iter() {
-            let next_box = hitable.bounding_box();
-            if let Some(next_box) = next_box {
-                if let Some(aabb) = result {
-                    result = Some(aabb.expand(&next_box));
-                } else {
-                    result = Some(next_box);
-                }
-            }
-        }
-        result
     }
 }
 */

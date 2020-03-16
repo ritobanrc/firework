@@ -8,24 +8,19 @@ use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Vec2, Vec3};
 
 pub struct Sphere {
-    center: Vec3,
     radius: f32,
     material: MaterialIdx,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f32, material: MaterialIdx) -> Sphere {
-        Sphere {
-            center,
-            radius,
-            material,
-        }
+    pub fn new(radius: f32, material: MaterialIdx) -> Sphere {
+        Sphere { radius, material }
     }
 }
 
 impl Hitable for Sphere {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, _rand: &mut LcRng) -> Option<RaycastHit> {
-        let v = *r.origin() - self.center;
+        let v = *r.origin();
         let a = r.direction().dot(*r.direction());
         let b = v.dot(*r.direction());
         let c = v.dot(v) - self.radius * self.radius;
@@ -52,9 +47,9 @@ impl Hitable for Sphere {
                 Some(RaycastHit {
                     t,
                     point,
-                    normal: (point - self.center) / self.radius,
+                    normal: point / self.radius,
                     material: self.material,
-                    uv: sphere_uv(&((point - self.center) / self.radius)),
+                    uv: sphere_uv(&(point / self.radius)),
                 })
             } else {
                 None
@@ -66,8 +61,8 @@ impl Hitable for Sphere {
 
     fn bounding_box(&self) -> Option<AABB> {
         Some(AABB::new(
-            self.center - Vec3::one() * self.radius,
-            self.center + Vec3::one() * self.radius,
+            -Vec3::one() * self.radius,
+            Vec3::one() * self.radius,
         ))
     }
 }

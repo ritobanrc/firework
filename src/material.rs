@@ -29,8 +29,10 @@ pub struct LambertianMat {
 }
 
 impl LambertianMat {
-    pub fn new(albedo: Box<dyn Texture + Sync>) -> LambertianMat {
-        LambertianMat { albedo }
+    pub fn new<T: Texture + Sync + 'static>(albedo: T) -> LambertianMat {
+        LambertianMat {
+            albedo: Box::new(albedo),
+        }
     }
 
     pub fn with_color(albedo: Vec3) -> LambertianMat {
