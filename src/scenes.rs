@@ -6,7 +6,7 @@ use crate::texture::*;
 use crate::util::InRange;
 use image::open;
 use tiny_rng::Rand;
-use ultraviolet::Vec3;
+use ultraviolet::{Vec3, Rotor3};
 
 pub fn cornell_smoke() -> Scene<'static> {
     let cam_pos = Vec3::new(278., 278., -800.);
@@ -31,10 +31,10 @@ pub fn cornell_smoke() -> Scene<'static> {
     )));
     world.add_object(RenderObject::new(XZRect::new(
         0., 555., 0., 555., 555., white,
-    )));
+    )).flip_normals());
     world.add_object(RenderObject::new(XYRect::new(
         0., 555., 0., 555., 555., white,
-    )));
+    )).flip_normals());
 
     let volume1 = RenderObject::new(ConstantMedium::new(
         Rect3d::with_size(Vec3::new(165., 165., 165.), 0),
@@ -42,7 +42,7 @@ pub fn cornell_smoke() -> Scene<'static> {
         Box::new(ConstantTexture::new(Vec3::one())),
         &mut world,
     ))
-    .rotate_y(-18.)
+    .rotate(Rotor3::from_rotation_xz(18_f32.to_radians()))
     .position(130., 0., 65.);
     world.add_object(volume1);
 
@@ -52,7 +52,7 @@ pub fn cornell_smoke() -> Scene<'static> {
         Box::new(ConstantTexture::new(Vec3::zero())),
         &mut world,
     ))
-    .rotate_y(15.)
+    .rotate(Rotor3::from_rotation_xz(-15_f32.to_radians()))
     .position(265., 0., 295.);
 
     world.add_object(volume2);
@@ -71,10 +71,10 @@ pub fn cornell_box() -> Scene<'static> {
     let white = world.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
     let green = world.add_material(LambertianMat::with_color(Vec3::new(0.12, 0.45, 0.15)));
 
-    let light = world.add_material(ConstantMat::with_color(Vec3::new(7., 7., 7.)));
+    let light = world.add_material(ConstantMat::with_color(Vec3::new(15., 15., 15.)));
 
     world.add_object(RenderObject::new(XZRect::new(
-        113., 443., 127., 432., 554., light,
+        213., 343., 227., 332., 554., light,
     )));
     world
         .add_object(RenderObject::new(YZRect::new(0., 555., 0., 555., 555., green)).flip_normals());
@@ -88,12 +88,12 @@ pub fn cornell_box() -> Scene<'static> {
         .add_object(RenderObject::new(XYRect::new(0., 555., 0., 555., 555., white)).flip_normals());
     world.add_object(
         RenderObject::new(Rect3d::with_size(Vec3::new(165., 165., 165.), white))
-            .rotate_y(-18.)
+            .rotate(Rotor3::from_rotation_xz(18_f32.to_radians()))
             .position(130., 0., 65.),
     );
     world.add_object(
         RenderObject::new(Rect3d::with_size(Vec3::new(165., 330., 165.), white))
-            .rotate_y(15.)
+            .rotate(Rotor3::from_rotation_xz(-15_f32.to_radians()))
             .position(265., 0., 295.),
     );
 

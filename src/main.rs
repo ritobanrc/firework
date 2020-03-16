@@ -3,6 +3,9 @@
 #![feature(clamp)]
 #![feature(const_generics)]
 
+#[macro_use]
+extern crate itertools;
+
 use crate::bvh::BVHNode;
 use crate::camera::Camera;
 use crate::ray::Ray;
@@ -28,18 +31,18 @@ mod scenes;
 mod texture;
 mod util;
 
-const WIDTH: usize = 480;
-const HEIGHT: usize = 270;
+const WIDTH: usize = 300;
+const HEIGHT: usize = 300;
 
-const SAMPLES: usize = 500;
+const SAMPLES: usize = 2000;
 
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.
-    let mut rng = LcRng::new(buffer.len() as u64);
-    let scene = random_scene(&mut rng);
+    //let mut rng = LcRng::new(buffer.len() as u64);
+    let scene = cornell_box();
 
     let root_bvh = BVHNode::new(&scene);
 
@@ -57,7 +60,7 @@ fn main() {
         for _ in 0..SAMPLES {
             let (u, v): (f32, f32) = pos.into_f32s_with_offset(rng.rand_f32(), rng.rand_f32());
             let ray = scene.ray(u, v, &mut rng);
-            total_color += color(&ray, &scene, &root_bvh, 0, &mut rng);
+            total_color += color(&ray, &scene, &scene, 0, &mut rng);
         }
 
         total_color /= SAMPLES as f32;

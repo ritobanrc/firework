@@ -3,7 +3,7 @@ use crate::camera::Camera;
 use crate::material::Material;
 use crate::Ray;
 use tiny_rng::{LcRng, Rand};
-use ultraviolet::Vec3;
+use ultraviolet::{Vec3, Rotor3, Mat3};
 
 const SKY_BLUE: Vec3 = Vec3 {
     x: 0.5,
@@ -98,17 +98,24 @@ impl Hitable for Scene<'_> {
 pub struct RenderObject<'a> {
     obj: Box<dyn Hitable + Sync + 'a>,
     position: Vec3,
-    rotation_y: f32, // TODO: Replace this with ultraviolet::Rotor and/or
+    rotation: Rotor3, // TODO: Replace this with ultraviolet::Rotor and/or
+    rotation_mat: Mat3,
+    inv_rotation_mat: Mat3,
     flip_normals: bool,
+    aabb: Option<AABB>,
 }
 
 impl<'a> RenderObject<'a> {
     pub fn new<T: Hitable + Sync + 'a>(obj: T) -> RenderObject<'a> {
+        let aabb = obj.bounding_box();
         RenderObject {
             obj: Box::new(obj),
             position: Vec3::zero(),
-            rotation_y: 0.,
+            rotation: Rotor3::identity(),
+            rotation_mat: Mat3::identity(),
+            inv_rotation_mat: Mat3::identity(),
             flip_normals: false,
+            aabb
         }
     }
 
@@ -116,6 +123,7 @@ impl<'a> RenderObject<'a> {
     #[inline(always)]
     pub fn position(mut self, x: f32, y: f32, z: f32) -> RenderObject<'a> {
         self.position = Vec3::new(x, y, z);
+        self.update_bounding_box();
         self
     }
 
@@ -123,13 +131,17 @@ impl<'a> RenderObject<'a> {
     #[inline(always)]
     pub fn position_vec(mut self, pos: Vec3) -> RenderObject<'a> {
         self.position = pos;
+        self.update_bounding_box();
         self
     }
 
     /// Sets the rotation of the `RenderObject` on the Y Axis
     #[inline(always)]
-    pub fn rotate_y(mut self, angle: f32) -> RenderObject<'a> {
-        self.rotation_y = angle;
+    pub fn rotate(mut self, rotor: Rotor3) -> RenderObject<'a> {
+        self.rotation = rotor;
+        self.rotation_mat = rotor.into_matrix();
+        self.inv_rotation_mat = rotor.reversed().into_matrix();
+        self.update_bounding_box();
         self
     }
 
@@ -139,13 +151,53 @@ impl<'a> RenderObject<'a> {
         self.flip_normals = !self.flip_normals;
         self
     }
+
+    fn update_bounding_box(&mut self) {
+        self.aabb = if let Some(bbox) = self.obj.bounding_box() {
+            // First, rotate the bounding box
+            // If there is a signficant rotation
+            let rotated_aabb = if self.rotation.mag_sq() > 0.001 {
+                let mut min = 10e9 * Vec3::one();
+                let mut max = -10e9 * Vec3::one();
+                for (i, j, k) in iproduct!(0..2, 0..2, 0..2) {
+                    // Get the position of the corner
+                    let x = if i == 0 { bbox.min.x } else { bbox.max.x };
+                    let y = if j == 0 { bbox.min.y } else { bbox.max.y };
+                    let z = if k == 0 { bbox.min.z } else { bbox.max.z };
+
+                    let new_pos = self.rotation_mat * Vec3::new(x, y, z);
+                    for c in 0..3 {
+                        max[c] = new_pos[c].max(max[c]);
+                        min[c] = new_pos[c].min(min[c]);
+                    }
+                }
+                AABB::new(min, max)
+            } else {
+                bbox
+            };
+            // Then translate it
+            Some(AABB::new(rotated_aabb.min + self.position, rotated_aabb.max + self.position))
+        } else {
+            None
+        }
+    }
 }
 
 impl Hitable for RenderObject<'_> {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
-        let new_ray = Ray::new(*r.origin() - self.position, *r.direction());
+        let new_ray = if self.rotation.mag_sq() > 0.001 {
+            Ray::new(
+                self.inv_rotation_mat * (*r.origin() - self.position),
+                self.inv_rotation_mat * *r.direction()
+            )
+        } else {
+            Ray::new(*r.origin() - self.position, *r.direction())
+        };
         if let Some(mut hit) = self.obj.hit(&new_ray, t_min, t_max, rand) {
+            hit.point = self.rotation_mat * hit.point;
             hit.point += self.position;
+
+            hit.normal = self.rotation_mat * hit.normal;
             if self.flip_normals {
                 hit.normal = -hit.normal;
             }
@@ -156,9 +208,7 @@ impl Hitable for RenderObject<'_> {
     }
 
     fn bounding_box(&self) -> Option<AABB> {
-        self.obj
-            .bounding_box()
-            .map(|bb| AABB::new(bb.min + self.position, bb.max + self.position))
+        self.aabb.clone()
     }
 }
 
@@ -186,8 +236,8 @@ pub fn color(r: &Ray, scene: &Scene, root: &impl Hitable, depth: usize, rand: &m
             emit
         }
     } else {
-        //Vec3::zero()
-        sky_color(r)
+        Vec3::zero()
+        //sky_color(r)
     }
 }
 
@@ -204,7 +254,7 @@ pub trait Hitable {
     fn bounding_box(&self) -> Option<AABB>;
 }
 
-/*
+
 pub struct RotateY {
     _angle: f32,
     sin_theta: f32,
@@ -265,6 +315,8 @@ impl RotateY {
 
 impl Hitable for RotateY {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
+        // [ cos x   -sin x]
+        // [ sin x    cos x]
         let origin = Vec3::new(
             self.cos_theta * r.origin().x - self.sin_theta * r.origin().z,
             r.origin().y,
@@ -277,6 +329,8 @@ impl Hitable for RotateY {
         );
         let new_r = Ray::new(origin, direction);
         if let Some(mut hit) = self.obj.hit(&new_r, t_min, t_max, rand) {
+            // [  cos x    sin x]
+            // [ -sin x    cos x]
             hit.point = Vec3::new(
                 self.cos_theta * hit.point.x + self.sin_theta * hit.point.z,
                 hit.point.y,
@@ -298,4 +352,3 @@ impl Hitable for RotateY {
         self.aabb.clone()
     }
 }
-*/
