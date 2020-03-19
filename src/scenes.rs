@@ -1,25 +1,25 @@
+use crate::camera::Camera;
 use crate::material::{ConstantMat, DielectricMat, LambertianMat, MetalMat};
 use crate::objects::{ConstantMedium, Rect3d, Sphere, XYRect, XZRect, YZRect};
-use crate::camera::Camera;
-use crate::render::{RenderObject, Scene};
 use crate::ray::Ray;
+use crate::render::{RenderObject, Scene};
 use crate::texture::*;
 use crate::util::InRange;
 use image::open;
 use tiny_rng::Rand;
-use ultraviolet::{Vec3, Rotor3};
+use ultraviolet::{Rotor3, Vec3};
 
 pub fn hdri_test() -> Scene<'static> {
+    use crate::util::sphere_uv;
+    use image::hdr::HDRDecoder;
     use std::fs::File;
     use std::io::BufReader;
-    use image::hdr::HDRDecoder;
-    use crate::util::sphere_uv;
 
-    let cam_pos = Vec3::new(0., 2., -10.);
-    let look_at = Vec3::zero();
-    let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 60., 0.0, 15.);
+    //let cam_pos = Vec3::new(0., 2., -10.);
+    //let look_at = Vec3::zero();
+    //let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 60., 0.0, 15.);
 
-    let mut scene = Scene::new(camera);
+    let mut scene = Scene::new();
 
     let hdri = File::open("urban_street_04_4k.hdr").unwrap();
     let hdri = BufReader::new(hdri);
@@ -42,8 +42,6 @@ pub fn hdri_test() -> Scene<'static> {
         pixels[idx].0.into()
     });
 
-
-
     let glass = scene.add_material(DielectricMat::new(1.5));
     let diffuse = scene.add_material(LambertianMat::with_color(Vec3::new(0.8, 0.8, 0.8)));
     let metal = scene.add_material(MetalMat::new(Vec3::new(0.7, 0.7, 0.7), 0.0));
@@ -52,17 +50,15 @@ pub fn hdri_test() -> Scene<'static> {
     scene.add_object(RenderObject::new(Sphere::new(1.0, diffuse)).position(-4., 1., 0.));
     scene.add_object(RenderObject::new(Sphere::new(1.0, metal)).position(4., 1., 0.));
 
-    scene.add_object(RenderObject::new(XZRect::new(-100., 100., -100., 100., 0., diffuse)));
+    scene.add_object(RenderObject::new(XZRect::new(
+        -100., 100., -100., 100., 0., diffuse,
+    )));
 
     scene
 }
 
 pub fn cornell_smoke() -> Scene<'static> {
-    let cam_pos = Vec3::new(278., 278., -800.);
-    let look_at = Vec3::new(278., 278., 0.);
-    let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
-
-    let mut world = Scene::new(camera);
+    let mut world = Scene::new();
 
     let red = world.add_material(LambertianMat::with_color(Vec3::new(0.65, 0.05, 0.05)));
     let white = world.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
@@ -78,12 +74,10 @@ pub fn cornell_smoke() -> Scene<'static> {
     world.add_object(RenderObject::new(XZRect::new(
         0., 555., 0., 555., 0., white,
     )));
-    world.add_object(RenderObject::new(XZRect::new(
-        0., 555., 0., 555., 555., white,
-    )).flip_normals());
-    world.add_object(RenderObject::new(XYRect::new(
-        0., 555., 0., 555., 555., white,
-    )).flip_normals());
+    world
+        .add_object(RenderObject::new(XZRect::new(0., 555., 0., 555., 555., white)).flip_normals());
+    world
+        .add_object(RenderObject::new(XYRect::new(0., 555., 0., 555., 555., white)).flip_normals());
 
     let volume1 = RenderObject::new(ConstantMedium::new(
         Rect3d::with_size(Vec3::new(165., 165., 165.), 0),
@@ -110,11 +104,11 @@ pub fn cornell_smoke() -> Scene<'static> {
 }
 
 pub fn cornell_box() -> Scene<'static> {
-    let cam_pos = Vec3::new(278., 278., -800.);
-    let look_at = Vec3::new(278., 278., 0.);
-    let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
+    //let cam_pos = Vec3::new(278., 278., -800.);
+    //let look_at = Vec3::new(278., 278., 0.);
+    //let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
 
-    let mut world = Scene::new(camera);
+    let mut world = Scene::new();
 
     let red = world.add_material(LambertianMat::with_color(Vec3::new(0.65, 0.05, 0.05)));
     let white = world.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
@@ -150,10 +144,10 @@ pub fn cornell_box() -> Scene<'static> {
 }
 
 pub fn earth_scene() -> Scene<'static> {
-    let cam_pos = Vec3::new(13., 2., 3.);
-    let look_at = Vec3::new(0., 0., 0.);
-    let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
-    let mut scene = Scene::new(camera);
+    //let cam_pos = Vec3::new(13., 2., 3.);
+    //let look_at = Vec3::new(0., 0., 0.);
+    //let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
+    let mut scene = Scene::new();
     let image = open("./earthmap.jpg").unwrap();
     let earth_mat = scene.add_material(LambertianMat::new(ImageTexture::new(image)));
     scene.add_object(RenderObject::new(Sphere::new(2., earth_mat)));
@@ -163,10 +157,10 @@ pub fn earth_scene() -> Scene<'static> {
 }
 
 pub fn random_scene(rand: &mut impl Rand) -> Scene {
-    let cam_pos = Vec3::new(13., 2., 3.);
-    let look_at = Vec3::new(0., 0., 0.);
-    let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
-    let mut scene = Scene::new(camera);
+    //let cam_pos = Vec3::new(13., 2., 3.);
+    //let look_at = Vec3::new(0., 0., 0.);
+    //let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);
+    let mut scene = Scene::new();
 
     let checker_mat = scene.add_material(LambertianMat::new(CheckerTexture::with_colors(
         Vec3::new(0.2, 0.4, 0.1),
@@ -219,7 +213,6 @@ pub fn random_scene(rand: &mut impl Rand) -> Scene {
 
     scene
 }
-
 
 /// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
 /// TODO: Don't have hardcoded SKY_BLUE and SKY_WHITE colors.

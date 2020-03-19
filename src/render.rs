@@ -1,9 +1,11 @@
 use crate::aabb::AABB;
-use crate::camera::Camera;
+use crate::camera::{Camera, CameraSettings};
 use crate::material::Material;
 use crate::Ray;
 use tiny_rng::{LcRng, Rand};
-use ultraviolet::{Vec3, Rotor3, Mat3};
+use ultraviolet::{Mat3, Rotor3, Vec3};
+use crate::util::Color;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// Used to index `Material`s in a `Scene`
 pub type MaterialIdx = usize;
@@ -11,22 +13,20 @@ pub type MaterialIdx = usize;
 /// Used to index `Material`s in a `Scene`
 pub type RenderObjectIdx = usize;
 
+/// Represents a Scene
 pub struct Scene<'a> {
     pub(crate) render_objects: Vec<RenderObject<'a>>,
     materials: Vec<Box<dyn Material + Sync + 'a>>, // TODO: Remove the layer of indirection here
-    camera: Camera,
-    environment: Box<dyn Fn(&Ray) -> Vec3 + Sync + 'a>
+    environment: Box<dyn Fn(&Ray) -> Vec3 + Sync + 'a>,
 }
 
-
-
 impl<'a> Scene<'a> {
-    pub fn new(camera: Camera) -> Scene<'a> {
+    /// Creates an empty scene, with the given camera.
+    pub fn new() -> Scene<'a> {
         Scene {
             render_objects: Vec::new(),
             materials: Vec::new(),
-            camera,
-            environment: Box::new(|_: &Ray| { Vec3::zero() }),
+            environment: Box::new(|_: &Ray| Vec3::zero()),
         }
     }
 
@@ -52,17 +52,10 @@ impl<'a> Scene<'a> {
         self.materials[idx].as_ref()
     }
 
-
     /// Sets the closure for the "environment"
     pub fn set_environment<F: Fn(&Ray) -> Vec3 + Sync + 'a>(&mut self, func: F) {
         self.environment = Box::new(func);
     }
-
-    /// Returns the ray for the camera at a given location on the screen
-    pub(crate) fn ray(&self, s: f32, t: f32, rand: &mut impl Rand) -> Ray {
-        self.camera.ray(s, t, rand)
-    }
-
 }
 
 impl Hitable for Scene<'_> {
@@ -95,6 +88,8 @@ impl Hitable for Scene<'_> {
     }
 }
 
+/// A struct representing an object that can be rendered. Contains the base `Hitable` as well as
+/// any transformations on it.
 pub struct RenderObject<'a> {
     obj: Box<dyn Hitable + Sync + 'a>,
     position: Vec3,
@@ -106,6 +101,7 @@ pub struct RenderObject<'a> {
 }
 
 impl<'a> RenderObject<'a> {
+    /// Creates a new RenderObject
     pub fn new<T: Hitable + Sync + 'a>(obj: T) -> RenderObject<'a> {
         let aabb = obj.bounding_box();
         RenderObject {
@@ -115,7 +111,7 @@ impl<'a> RenderObject<'a> {
             rotation_mat: Mat3::identity(),
             inv_rotation_mat: Mat3::identity(),
             flip_normals: false,
-            aabb
+            aabb,
         }
     }
 
@@ -176,7 +172,10 @@ impl<'a> RenderObject<'a> {
                 bbox
             };
             // Then translate it
-            Some(AABB::new(rotated_aabb.min + self.position, rotated_aabb.max + self.position))
+            Some(AABB::new(
+                rotated_aabb.min + self.position,
+                rotated_aabb.max + self.position,
+            ))
         } else {
             None
         }
@@ -188,7 +187,7 @@ impl Hitable for RenderObject<'_> {
         let new_ray = if self.rotation.mag_sq() > 0.001 {
             Ray::new(
                 self.inv_rotation_mat * (*r.origin() - self.position),
-                self.inv_rotation_mat * *r.direction()
+                self.inv_rotation_mat * *r.direction(),
             )
         } else {
             Ray::new(*r.origin() - self.position, *r.direction())
@@ -239,8 +238,151 @@ pub struct RaycastHit {
     pub uv: (f32, f32),
 }
 
+/// Trait that allows something to be ray-tracing, i.e. something that can be hit by a ray.
 pub trait Hitable {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit>;
     fn bounding_box(&self) -> Option<AABB>;
 }
 
+pub struct Renderer {
+    /// The width of the render (in pixels)
+    pub width: usize,
+    /// The height of the render (in pixels)
+    pub height: usize,
+    /// The number of samples for each pixel
+    pub samples: usize,
+    /// If true, this will use rayon for multithreading
+    /// TODO: Make this a cargo feature or something, so we don't pull rayon in as a dependency
+    /// unless we must to
+    pub multithreaded: bool,
+    /// Whether or not to us a bounding volume hierarchy. Recommended only for scenes with a
+    /// large number of objects
+    pub use_bvh: bool,
+    /// The gamma correction applied, i.e. the output from the renderer is raised to the 1/gamma power before returning
+    pub gamma: f32,
+    /// The settings to create the camera
+    camera: CameraSettings,
+}
+
+impl Renderer {
+    pub fn width(mut self, width: usize) -> Renderer {
+        self.width = width;
+        self
+    }
+    pub fn height(mut self, height: usize) -> Renderer {
+        self.height = height;
+        self
+    }
+    pub fn samples(mut self, samples: usize) -> Renderer {
+        self.samples = samples;
+        self
+    }
+    pub fn multithreaded(mut self, multithreaded: bool) -> Renderer {
+        self.multithreaded = multithreaded;
+        self
+    }
+    pub fn use_bvh(mut self, use_bvh: bool) -> Renderer {
+        self.use_bvh = use_bvh;
+        self
+    }
+    pub fn gamma(mut self, gamma: f32) -> Renderer {
+        self.gamma = gamma;
+        self
+    }
+    pub fn camera(mut self, settings: CameraSettings) -> Renderer {
+        self.camera = settings;
+        self
+    }
+
+    pub fn render(&self, scene: &Scene) -> Vec<Color> {
+        use rayon::prelude::*;
+        use crate::bvh::BVHNode;
+
+        let mut buffer = vec![Color(0, 0, 0); self.width * self.height];
+
+        let bvh = if self.use_bvh {
+            Some(BVHNode::new(scene))
+        } else {
+            None
+        };
+
+        let camera = self.camera.create_camera(self.width, self.height);
+
+        if self.multithreaded {
+            let completed = AtomicUsize::new(0);
+            buffer.par_iter_mut().enumerate().for_each(|(idx, pix)| {
+                if let Some(bvh) = &bvh {
+                    *pix = self.render_pixel(scene, bvh, &camera, idx)
+                } else {
+                    *pix = self.render_pixel(scene, scene, &camera, idx)
+                }
+                let count = completed.fetch_add(1, Ordering::SeqCst);
+                if count % 10000 == 0 {
+                    println!("Completed {}/{}", count / 10000, self.width * self.height / 10000)
+                }
+            })
+        } else {
+            buffer.iter_mut().enumerate().for_each(|(idx, pix)| {
+                if let Some(bvh) = &bvh {
+                    *pix = self.render_pixel(scene, bvh, &camera, idx)
+                } else {
+                    *pix = self.render_pixel(scene, scene, &camera, idx)
+                }
+
+                if idx % 10000 == 0 {
+                    println!("Completed {}/{}", idx / 10000, self.width * self.height / 10000)
+                }
+            })
+        }
+
+        buffer
+    }
+
+    fn render_pixel(&self, scene: &Scene, root: &impl Hitable, camera: &Camera, idx: usize) -> Color {
+        use crate::util::Coord;
+        // NOTE: I have no idea if seeding the Rng with the idx is valid.
+        let mut rng = LcRng::new(idx as u64);
+        let pos = Coord::from_index(idx, self.width, self.height);
+
+        let mut total_color = Vec3::zero();
+
+        for _ in 0..self.samples {
+            let u = (pos.0 as f32 + rng.rand_f32()) / self.width as f32;
+            let v = (pos.1 as f32 + rng.rand_f32()) / self.height as f32;
+            let ray = camera.ray(u, v, &mut rng);
+            total_color += color(&ray, &scene, root, 0, &mut rng);
+        }
+
+        total_color /= self.samples as f32;
+        total_color = total_color.map(|x| x.powf(1./self.gamma)).map(|x| x.clamp(0., 1.));
+
+        let colori: Color = total_color.into();
+        colori
+
+        //let count = completed.fetch_add(1, Ordering::SeqCst);
+        //if idx % 10000 == 0 {
+            //println!("Completed {}/{}", count / 10000, WIDTH * HEIGHT / 10000)
+        //}
+    }
+}
+
+impl Default for Renderer {
+    /// Creates a default renderer with
+    /// width: 1920
+    /// height: 1080
+    /// samples: 128
+    /// multithreaded: true
+    /// use_bvh: false
+    /// gamma: 2.2
+    fn default() -> Self {
+        Renderer {
+            width: 1920,
+            height: 1080,
+            samples: 128,
+            multithreaded: true,
+            use_bvh: false,
+            gamma: 2.2,
+            camera: Default::default(),
+        }
+    }
+}

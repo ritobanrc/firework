@@ -1,10 +1,9 @@
-use crate::{HEIGHT, WIDTH};
 use std::f32::consts::PI;
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Color(u8, u8, u8);
+pub struct Color(pub u8, pub u8, pub u8);
 
 impl From<Color> for u32 {
     fn from(color: Color) -> u32 {
@@ -24,32 +23,17 @@ impl From<Vec3> for Color {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Coord(usize, usize);
+pub struct Coord(pub usize, pub usize);
 
 impl Coord {
-    pub fn into_f32s_with_offset(&self, xoff: f32, yoff: f32) -> (f32, f32) {
-        (
-            (self.0 as f32 + xoff) / WIDTH as f32,
-            (self.1 as f32 + yoff) / HEIGHT as f32,
-        )
-    }
-}
-
-impl From<usize> for Coord {
     /// Using the global `const`s WIDTH and HEIGHT, convert an index (x + (HEIGHT - y) * WIDTH) back an (x, y)
     /// `Coord`. Note that this function assumes that as the index increases, the y values decrease
     /// (i.e. `idx = 0` is at the bottom left at (0, HEIGHT))
-    fn from(idx: usize) -> Coord {
-        Coord(idx % WIDTH, HEIGHT - (idx / WIDTH))
+    pub fn from_index(idx: usize, width: usize, height: usize) -> Coord {
+        Coord(idx % width, height - (idx / width))
     }
 }
 
-impl Into<(f32, f32)> for Coord {
-    /// Converts the coord into a (f64, f64) tuple, where both values are in the range 0..1
-    fn into(self) -> (f32, f32) {
-        (self.0 as f32 / WIDTH as f32, self.1 as f32 / HEIGHT as f32)
-    }
-}
 
 pub(crate) fn random_in_unit_sphere(rng: &mut impl Rand) -> Vec3 {
     loop {
