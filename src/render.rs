@@ -5,17 +5,6 @@ use crate::Ray;
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Vec3, Rotor3, Mat3};
 
-const SKY_BLUE: Vec3 = Vec3 {
-    x: 0.5,
-    y: 0.7,
-    z: 1.0,
-};
-const SKY_WHITE: Vec3 = Vec3 {
-    x: 1.,
-    y: 1.,
-    z: 1.,
-};
-
 /// Used to index `Material`s in a `Scene`
 pub type MaterialIdx = usize;
 
@@ -26,14 +15,18 @@ pub struct Scene<'a> {
     pub(crate) render_objects: Vec<RenderObject<'a>>,
     materials: Vec<Box<dyn Material + Sync + 'a>>, // TODO: Remove the layer of indirection here
     camera: Camera,
+    environment: Box<dyn Fn(&Ray) -> Vec3 + Sync + 'a>
 }
+
+
 
 impl<'a> Scene<'a> {
     pub fn new(camera: Camera) -> Scene<'a> {
         Scene {
             render_objects: Vec::new(),
             materials: Vec::new(),
-            camera
+            camera,
+            environment: Box::new(|_: &Ray| { Vec3::zero() }),
         }
     }
 
@@ -59,10 +52,17 @@ impl<'a> Scene<'a> {
         self.materials[idx].as_ref()
     }
 
+
+    /// Sets the closure for the "environment"
+    pub fn set_environment<F: Fn(&Ray) -> Vec3 + Sync + 'a>(&mut self, func: F) {
+        self.environment = Box::new(func);
+    }
+
     /// Returns the ray for the camera at a given location on the screen
     pub(crate) fn ray(&self, s: f32, t: f32, rand: &mut impl Rand) -> Ray {
         self.camera.ray(s, t, rand)
     }
+
 }
 
 impl Hitable for Scene<'_> {
@@ -212,15 +212,6 @@ impl Hitable for RenderObject<'_> {
     }
 }
 
-/// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
-/// TODO: Don't have hardcoded SKY_BLUE and SKY_WHITE colors.
-fn sky_color(r: &Ray) -> Vec3 {
-    let dir = r.direction().normalized();
-    // Take the y (from -1 to +1) and map it to 0..1
-    let t = 0.5 * (dir.y + 1.0);
-    (1. - t) * SKY_WHITE + t * SKY_BLUE
-}
-
 /// Performs the ray tracing for a given ray in the world and returns it's color.
 /// TODO: Solve the inconsistency between `scene` and `bvh_root` arguments
 pub fn color(r: &Ray, scene: &Scene, root: &impl Hitable, depth: usize, rand: &mut LcRng) -> Vec3 {
@@ -236,8 +227,7 @@ pub fn color(r: &Ray, scene: &Scene, root: &impl Hitable, depth: usize, rand: &m
             emit
         }
     } else {
-        Vec3::zero()
-        //sky_color(r)
+        (scene.environment)(r)
     }
 }
 

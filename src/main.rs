@@ -7,7 +7,6 @@
 extern crate itertools;
 
 use crate::bvh::BVHNode;
-use crate::camera::Camera;
 use crate::ray::Ray;
 use crate::render::color;
 use crate::scenes::*;
@@ -34,17 +33,16 @@ mod util;
 const WIDTH: usize = 300;
 const HEIGHT: usize = 300;
 
-const SAMPLES: usize = 2000;
+const SAMPLES: usize = 200;
 
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
-
     // We're seeding this rng with buffer.len(), because each idx of the buffer is used as the seed
     // for that pixel.
     //let mut rng = LcRng::new(buffer.len() as u64);
-    let scene = cornell_box();
+    let scene = hdri_test();
 
-    let root_bvh = BVHNode::new(&scene);
+    //let root_bvh = BVHNode::new(&scene);
 
     let start = time::Instant::now();
 
