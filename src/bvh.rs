@@ -39,8 +39,6 @@ impl<'a> BVHNode<'a> {
                 .expect("Float comparison failed in BVH constructor")
         });
 
-        //eprintln!("{:?}", indicies.iter().map(|x| { (x, scene.get_object(*x).bounding_box().unwrap().min) }).collect::<Vec<_>>());
-
         match indicies {
             &mut [a] => {
                 let aabb = scene

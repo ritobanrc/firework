@@ -1,11 +1,11 @@
 use crate::aabb::AABB;
 use crate::camera::{Camera, CameraSettings};
 use crate::material::Material;
+use crate::util::Color;
 use crate::Ray;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Mat3, Rotor3, Vec3};
-use crate::util::Color;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// Used to index `Material`s in a `Scene`
 pub type MaterialIdx = usize;
@@ -295,8 +295,8 @@ impl Renderer {
     }
 
     pub fn render(&self, scene: &Scene) -> Vec<Color> {
-        use rayon::prelude::*;
         use crate::bvh::BVHNode;
+        use rayon::prelude::*;
 
         let mut buffer = vec![Color(0, 0, 0); self.width * self.height];
 
@@ -318,7 +318,11 @@ impl Renderer {
                 }
                 let count = completed.fetch_add(1, Ordering::SeqCst);
                 if count % 10000 == 0 {
-                    println!("Completed {}/{}", count / 10000, self.width * self.height / 10000)
+                    println!(
+                        "Completed {}/{}",
+                        count / 10000,
+                        self.width * self.height / 10000
+                    )
                 }
             })
         } else {
@@ -330,7 +334,11 @@ impl Renderer {
                 }
 
                 if idx % 10000 == 0 {
-                    println!("Completed {}/{}", idx / 10000, self.width * self.height / 10000)
+                    println!(
+                        "Completed {}/{}",
+                        idx / 10000,
+                        self.width * self.height / 10000
+                    )
                 }
             })
         }
@@ -338,7 +346,13 @@ impl Renderer {
         buffer
     }
 
-    fn render_pixel(&self, scene: &Scene, root: &impl Hitable, camera: &Camera, idx: usize) -> Color {
+    fn render_pixel(
+        &self,
+        scene: &Scene,
+        root: &impl Hitable,
+        camera: &Camera,
+        idx: usize,
+    ) -> Color {
         use crate::util::Coord;
         // NOTE: I have no idea if seeding the Rng with the idx is valid.
         let mut rng = LcRng::new(idx as u64);
@@ -354,14 +368,16 @@ impl Renderer {
         }
 
         total_color /= self.samples as f32;
-        total_color = total_color.map(|x| x.powf(1./self.gamma)).map(|x| x.clamp(0., 1.));
+        total_color = total_color
+            .map(|x| x.powf(1. / self.gamma))
+            .map(|x| x.clamp(0., 1.));
 
         let colori: Color = total_color.into();
         colori
 
         //let count = completed.fetch_add(1, Ordering::SeqCst);
         //if idx % 10000 == 0 {
-            //println!("Completed {}/{}", count / 10000, WIDTH * HEIGHT / 10000)
+        //println!("Completed {}/{}", count / 10000, WIDTH * HEIGHT / 10000)
         //}
     }
 }

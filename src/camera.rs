@@ -37,7 +37,15 @@ impl Default for CameraSettings {
 
 impl CameraSettings {
     pub fn create_camera(&self, width: usize, height: usize) -> Camera {
-        Camera::new(self.cam_pos, self.look_at, self.vfov, self.aperture, self.focus_dist, width, height)
+        Camera::new(
+            self.cam_pos,
+            self.look_at,
+            self.vfov,
+            self.aperture,
+            self.focus_dist,
+            width,
+            height,
+        )
     }
 
     pub fn cam_pos(mut self, cam_pos: Vec3) -> CameraSettings {

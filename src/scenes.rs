@@ -1,4 +1,3 @@
-use crate::camera::Camera;
 use crate::material::{ConstantMat, DielectricMat, LambertianMat, MetalMat};
 use crate::objects::{ConstantMedium, Rect3d, Sphere, XYRect, XZRect, YZRect};
 use crate::ray::Ray;

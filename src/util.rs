@@ -34,7 +34,6 @@ impl Coord {
     }
 }
 
-
 pub(crate) fn random_in_unit_sphere(rng: &mut impl Rand) -> Vec3 {
     loop {
         let p = 2.0 * Vec3::new(rng.rand_f32(), rng.rand_f32(), rng.rand_f32()) - Vec3::one();
