@@ -1,7 +1,7 @@
 use crate::render::RaycastHit;
 use crate::texture::{ConstantTexture, Texture};
 use crate::util::{random_in_unit_sphere, reflect, refract, schlick};
-use crate::Ray;
+use crate::ray::Ray;
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::Vec3;
 

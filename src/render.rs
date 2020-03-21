@@ -2,7 +2,7 @@ use crate::aabb::AABB;
 use crate::camera::{Camera, CameraSettings};
 use crate::material::Material;
 use crate::util::Color;
-use crate::Ray;
+use crate::ray::Ray;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Mat3, Rotor3, Vec3};
@@ -17,7 +17,7 @@ pub type RenderObjectIdx = usize;
 pub struct Scene<'a> {
     pub(crate) render_objects: Vec<RenderObject<'a>>,
     materials: Vec<Box<dyn Material + Sync + 'a>>, // TODO: Remove the layer of indirection here
-    environment: Box<dyn Fn(&Ray) -> Vec3 + Sync + 'a>,
+    environment: Box<dyn Fn(Vec3) -> Vec3 + Sync + 'a>,
 }
 
 impl<'a> Scene<'a> {
@@ -26,7 +26,7 @@ impl<'a> Scene<'a> {
         Scene {
             render_objects: Vec::new(),
             materials: Vec::new(),
-            environment: Box::new(|_: &Ray| Vec3::zero()),
+            environment: Box::new(|_: Vec3| Vec3::zero()),
         }
     }
 
@@ -53,7 +53,7 @@ impl<'a> Scene<'a> {
     }
 
     /// Sets the closure for the "environment"
-    pub fn set_environment<F: Fn(&Ray) -> Vec3 + Sync + 'a>(&mut self, func: F) {
+    pub fn set_environment<F: Fn(Vec3) -> Vec3 + Sync + 'a>(&mut self, func: F) {
         self.environment = Box::new(func);
     }
 }
@@ -226,7 +226,7 @@ pub fn color(r: &Ray, scene: &Scene, root: &impl Hitable, depth: usize, rand: &m
             emit
         }
     } else {
-        (scene.environment)(r)
+        (scene.environment)(r.direction().normalized())
     }
 }
 

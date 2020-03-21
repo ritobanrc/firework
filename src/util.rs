@@ -73,16 +73,6 @@ pub(crate) fn schlick(cosine: f32, ref_idx: f32) -> f32 {
     r0 + (1. - r0) * (1. - cosine).powf(5.)
 }
 
-pub trait InRange {
-    fn in_range(self, begin: Self, end: Self) -> bool;
-}
-
-impl InRange for f32 {
-    fn in_range(self, begin: f32, end: f32) -> bool {
-        self >= begin && self < end
-    }
-}
-
 pub fn sphere_uv(point: &Vec3) -> (f32, f32) {
     let phi = point.z.atan2(point.x);
     let theta = point.y.asin();
