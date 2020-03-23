@@ -1,7 +1,8 @@
 use crate::aabb::AABB;
 use crate::material::IsotropicMat;
 use crate::ray::Ray;
-use crate::render::{Hitable, MaterialIdx, RaycastHit, Scene};
+use crate::render::{Hitable, RaycastHit};
+use crate::scene::{Scene, MaterialIdx};
 use crate::texture::Texture;
 use crate::util::{sphere_uv, Axis};
 use tiny_rng::{LcRng, Rand};

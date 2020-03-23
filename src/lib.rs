@@ -3,6 +3,8 @@
 #![feature(clamp)]
 #![feature(const_generics)]
 
+#![allow(incomplete_features)]
+
 #[macro_use]
 extern crate itertools;
 
@@ -18,3 +20,4 @@ pub mod objects;
 pub mod window;
 pub mod render;
 pub mod texture;
+pub mod scene;

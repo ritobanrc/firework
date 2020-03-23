@@ -1,5 +1,4 @@
 use image::{GenericImageView, Pixel, Rgba};
-use tiny_rng::Rand;
 use ultraviolet::Vec3;
 
 pub trait Texture {
@@ -17,7 +16,7 @@ impl ConstantTexture {
 }
 
 impl Texture for ConstantTexture {
-    fn sample(&self, uv: (f32, f32), _point: &Vec3) -> Vec3 {
+    fn sample(&self, _uv: (f32, f32), _point: &Vec3) -> Vec3 {
         self.color
     }
 }
@@ -145,7 +144,7 @@ impl PerlinNoiseTexture {
 }
 
 impl Texture for PerlinNoiseTexture {
-    fn sample(&self, uv: (f32, f32), point: &Vec3) -> Vec3 {
+    fn sample(&self, _uv: (f32, f32), point: &Vec3) -> Vec3 {
         let a = PerlinNoiseTexture::noise(&(*point * self.scale));
         Vec3::one() * (a + 0.5).min(1.)
         //Vec3::new(-0.5, 0., 0.)

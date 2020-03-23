@@ -14,7 +14,7 @@ use ultraviolet::Vec3;
 pub trait Material {
     fn scatter(&self, r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult>;
 
-    fn emit(&self, uv: (f32, f32), point: &Vec3) -> Vec3 {
+    fn emit(&self, _uv: (f32, f32), _point: &Vec3) -> Vec3 {
         Vec3::zero()
     }
 }
@@ -43,7 +43,7 @@ impl LambertianMat {
 }
 
 impl Material for LambertianMat {
-    fn scatter(&self, r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult> {
+    fn scatter(&self, _r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult> {
         let target = hit.point + hit.normal + random_in_unit_sphere(rand);
         let scattered = Ray::new(hit.point, target - hit.point);
         // TODO: Use proper UV Mapping
@@ -144,7 +144,7 @@ impl ConstantMat {
 }
 
 impl Material for ConstantMat {
-    fn scatter(&self, _r_in: &Ray, hit: &RaycastHit, _rand: &mut LcRng) -> Option<ScatterResult> {
+    fn scatter(&self, _r_in: &Ray, _hit: &RaycastHit, _rand: &mut LcRng) -> Option<ScatterResult> {
         None
     }
 

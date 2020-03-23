@@ -1,6 +1,7 @@
 use crate::aabb::AABB;
 use crate::ray::Ray;
-use crate::render::{Hitable, RaycastHit, RenderObject, Scene};
+use crate::render::{Hitable, RaycastHit};
+use crate::scene::{Scene, RenderObject};
 use tiny_rng::LcRng;
 
 pub struct BVHNode<'a> {
