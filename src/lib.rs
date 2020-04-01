@@ -21,3 +21,7 @@ pub mod window;
 pub mod render;
 pub mod texture;
 pub mod scene;
+
+pub use crate::scene::{Scene, RenderObject};
+pub use crate::render::Renderer;
+pub use crate::window::RenderWindow;

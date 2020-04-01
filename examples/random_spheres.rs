@@ -1,5 +1,5 @@
 use firework::material::{LambertianMat, MetalMat, DielectricMat};
-use firework::render::{RenderObject, Scene};
+use firework::scene::{RenderObject, Scene};
 use firework::texture::CheckerTexture;
 use firework::objects::Sphere;
 use ultraviolet::Vec3;

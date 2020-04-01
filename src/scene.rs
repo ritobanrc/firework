@@ -22,7 +22,7 @@ pub struct Scene<'a> {
 impl<'a> Scene<'a> {
     /// Creates an empty scene, with the given camera.
     /// ```
-    /// use std::firework::Scene;
+    /// use firework::Scene;
     /// let mut scene = Scene::new();
     /// ```
     pub fn new() -> Scene<'a> {
@@ -45,6 +45,13 @@ impl<'a> Scene<'a> {
     }
 
     /// Adds a material to the `Scene` and returns it's `MaterialIdx`
+    /// ```
+    /// use firework::Scene;
+    /// use firework::material::LambertianMat; 
+    /// use ultraviolet::Vec3;
+    /// let mut scene = Scene::new();
+    /// let red = scene.add_material(LambertianMat::with_color(Vec3::new(1., 0., 0.)));
+    /// ```
     pub fn add_material<T: Material + Sync + 'a>(&mut self, mat: T) -> MaterialIdx {
         self.materials.push(Box::new(mat));
         self.materials.len() - 1

@@ -24,17 +24,38 @@ pub struct ScatterResult {
     pub scattered: Ray,
 }
 
+/// Represents a diffuse (Lambertian) material.
+/// This is a completely "flat" material, like a piece of paper, because light is equally likely
+/// to be scattered in all directions.
 pub struct LambertianMat {
     albedo: Box<dyn Texture + Sync>,
 }
 
 impl LambertianMat {
+    /// Crates a new Lambertian Material with a given albedo texture.
+    /// ```
+    /// use firework::material::LambertianMat;
+    /// use firework::texture::ConstantTexture;
+    /// use ultraviolet::Vec3;
+    ///
+    /// let red_material = LambertianMat::new(ConstantTexture::new(Vec3::new(1., 0., 0.)));
+    /// ```
     pub fn new<T: Texture + Sync + 'static>(albedo: T) -> LambertianMat {
         LambertianMat {
             albedo: Box::new(albedo),
         }
     }
 
+    /// Crates a new Lambertian Material with a given albedo color. Equivalent to 
+    /// a `ConstantTexture`
+    /// color)
+    /// ```
+    /// use firework::material::LambertianMat;
+    /// use firework::texture::ConstantTexture;
+    /// use ultraviolet::Vec3;
+    ///
+    /// let red_material = LambertianMat::with_color(Vec3::new(1., 0., 0.));
+    /// ```
     pub fn with_color(albedo: Vec3) -> LambertianMat {
         LambertianMat {
             albedo: Box::new(ConstantTexture::new(albedo)),
@@ -127,23 +148,23 @@ impl Material for DielectricMat {
     }
 }
 
-pub struct ConstantMat {
+pub struct EmissiveMat {
     albedo: Box<dyn Texture + Sync>,
 }
 
-impl ConstantMat {
-    pub fn new(albedo: Box<dyn Texture + Sync>) -> ConstantMat {
-        ConstantMat { albedo }
+impl EmissiveMat {
+    pub fn new<T: Texture + Sync + 'static>(albedo: T) -> EmissiveMat {
+        EmissiveMat { albedo: Box::new(albedo) }
     }
 
-    pub fn with_color(albedo: Vec3) -> ConstantMat {
-        ConstantMat {
+    pub fn with_color(albedo: Vec3) -> EmissiveMat {
+        EmissiveMat {
             albedo: Box::new(ConstantTexture::new(albedo)),
         }
     }
 }
 
-impl Material for ConstantMat {
+impl Material for EmissiveMat {
     fn scatter(&self, _r_in: &Ray, _hit: &RaycastHit, _rand: &mut LcRng) -> Option<ScatterResult> {
         None
     }

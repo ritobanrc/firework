@@ -1,5 +1,5 @@
 use firework::material::{LambertianMat, MetalMat, DielectricMat};
-use firework::render::{RenderObject, Scene};
+use firework::scene::{RenderObject, Scene};
 use firework::objects::{Sphere, XZRect};
 use ultraviolet::Vec3;
 use std::time;

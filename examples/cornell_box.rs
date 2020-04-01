@@ -1,5 +1,5 @@
-use firework::material::{ConstantMat, LambertianMat};
-use firework::render::{RenderObject, Scene};
+use firework::material::{EmissiveMat, LambertianMat};
+use firework::scene::{RenderObject, Scene};
 use firework::objects::{Rect3d, XYRect, XZRect, YZRect};
 use ultraviolet::{Vec3, Rotor3};
 use std::time;
@@ -19,7 +19,7 @@ pub fn cornell_box() -> Scene<'static> {
     let white = world.add_material(LambertianMat::with_color(Vec3::new(0.73, 0.73, 0.73)));
     let green = world.add_material(LambertianMat::with_color(Vec3::new(0.12, 0.45, 0.15)));
 
-    let light = world.add_material(ConstantMat::with_color(Vec3::new(15., 15., 15.)));
+    let light = world.add_material(EmissiveMat::with_color(Vec3::new(15., 15., 15.)));
 
     world.add_object(RenderObject::new(XZRect::new(
         213., 343., 227., 332., 554., light,

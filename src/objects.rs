@@ -8,6 +8,7 @@ use crate::util::{sphere_uv, Axis};
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Vec2, Vec3};
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Sphere {
     radius: f32,
     material: MaterialIdx,
@@ -195,7 +196,8 @@ pub struct Rect3d {
 }
 
 impl Rect3d {
-    pub fn new(pos: Vec3, size: Vec3, material: MaterialIdx) -> Rect3d {
+    // TODO: Remove the position here, it should be handled by `RenderObject`
+    fn new(pos: Vec3, size: Vec3, material: MaterialIdx) -> Rect3d {
         let faces: Vec<Rect> = vec![
             XYRect::new(
                 pos.x,
