@@ -12,6 +12,6 @@ Major changes
 - Using const_generics to avoid code duplication in Rectangles
 - Not using separate `emit` and `scatter functions`
 
-![The Default Output](render.png)
+![Part 2 Final Render](part2_final.png)
 
-Rendered in 109 s. 
+Rendered in 9 hours.
