@@ -1,12 +1,11 @@
-use firework::material::{EmissiveMat, LambertianMat};
-use firework::scene::{RenderObject, Scene};
-use firework::objects::{Rect3d, XYRect, XZRect, YZRect};
-use ultraviolet::{Vec3, Rotor3};
-use std::time;
 use firework::camera::CameraSettings;
+use firework::material::{EmissiveMat, LambertianMat};
+use firework::objects::{Rect3d, XYRect, XZRect, YZRect};
 use firework::render::Renderer;
+use firework::scene::{RenderObject, Scene};
 use firework::window::RenderWindow;
-
+use std::time;
+use ultraviolet::{Rotor3, Vec3};
 
 pub fn cornell_box() -> Scene<'static> {
     //let cam_pos = Vec3::new(278., 278., -800.);
@@ -48,8 +47,6 @@ pub fn cornell_box() -> Scene<'static> {
     world
 }
 
-
-
 fn main() {
     let scene = cornell_box();
     let start = time::Instant::now();
@@ -78,4 +75,3 @@ fn main() {
 
     window.display(&render);
 }
-

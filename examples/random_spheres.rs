@@ -1,15 +1,13 @@
-use firework::material::{LambertianMat, MetalMat, DielectricMat};
+use firework::camera::CameraSettings;
+use firework::material::{DielectricMat, LambertianMat, MetalMat};
+use firework::objects::Sphere;
+use firework::render::Renderer;
 use firework::scene::{RenderObject, Scene};
 use firework::texture::CheckerTexture;
-use firework::objects::Sphere;
-use ultraviolet::Vec3;
-use std::time;
-use firework::camera::CameraSettings;
-use firework::render::Renderer;
 use firework::window::RenderWindow;
-use tiny_rng::{Rng, Rand};
-
-
+use std::time;
+use tiny_rng::{Rand, Rng};
+use ultraviolet::Vec3;
 
 /// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
 /// TODO: Don't have hardcoded SKY_BLUE and SKY_WHITE colors.
@@ -28,7 +26,6 @@ fn sky_color(dir: Vec3) -> Vec3 {
     let t = 0.5 * (dir.y + 1.0);
     (1. - t) * SKY_WHITE + t * SKY_BLUE
 }
-
 
 /// The famous scence on the cover of the "Raytracing in a Weekend Book"
 pub fn random_scene(rand: &mut impl Rand) -> Scene {
@@ -50,7 +47,7 @@ pub fn random_scene(rand: &mut impl Rand) -> Scene {
             );
             if (center - Vec3::new(4., 0.2, 0.9)).mag() > 0.9 {
                 let mat = match rand.rand_f32() {
-                    x if x  > 0.0 && x < 0.8 => {
+                    x if x > 0.0 && x < 0.8 => {
                         scene.add_material(LambertianMat::with_color(Vec3::new(
                             rand.rand_f32() * rand.rand_f32(),
                             rand.rand_f32() * rand.rand_f32(),
@@ -86,12 +83,9 @@ pub fn random_scene(rand: &mut impl Rand) -> Scene {
     scene
 }
 
-
-
 fn main() {
     let mut rng = Rng::new(12345);
     let scene = random_scene(&mut rng);
-
 
     let start = time::Instant::now();
 
@@ -101,9 +95,10 @@ fn main() {
         .aperture(0.1);
 
     let renderer = Renderer::default()
-        .width(1920)
-        .height(1080)
-        .samples(100)
+        .width(400)
+        .height(200)
+        .samples(32)
+        .use_bvh(true)
         .camera(camera);
 
     let render = renderer.render(&scene);
@@ -120,4 +115,3 @@ fn main() {
 
     window.display(&render);
 }
-

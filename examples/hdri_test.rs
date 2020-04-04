@@ -1,12 +1,12 @@
-use firework::material::{LambertianMat, MetalMat, DielectricMat};
-use firework::scene::{RenderObject, Scene};
-use firework::objects::{Sphere, XZRect};
-use ultraviolet::Vec3;
-use std::time;
 use firework::camera::CameraSettings;
+use firework::material::{DielectricMat, LambertianMat, MetalMat};
+use firework::objects::{Sphere, XZRect};
 use firework::render::Renderer;
+use firework::scene::{RenderObject, Scene};
 use firework::window::RenderWindow;
 use std::f32::consts::PI;
+use std::time;
+use ultraviolet::Vec3;
 
 pub fn sphere_uv(point: &Vec3) -> (f32, f32) {
     let phi = point.z.atan2(point.x);
@@ -16,9 +16,8 @@ pub fn sphere_uv(point: &Vec3) -> (f32, f32) {
     (u, v)
 }
 
-
 // TODO: Properly create an `environment` module in firework that handles all this
-// NOTE: Currently, there isn't importance sampling, so even with insane numbers of samples, it's impossible to get accurate HDR lighting that isn't noisy. 
+// NOTE: Currently, there isn't importance sampling, so even with insane numbers of samples, it's impossible to get accurate HDR lighting that isn't noisy.
 pub fn hdri_test() -> Scene<'static> {
     use image::hdr::HDRDecoder;
     use std::fs::File;
@@ -61,11 +60,8 @@ pub fn hdri_test() -> Scene<'static> {
     scene
 }
 
-
-
 fn main() {
     let scene = hdri_test();
-
 
     let start = time::Instant::now();
 
@@ -93,4 +89,3 @@ fn main() {
 
     window.display(&render);
 }
-

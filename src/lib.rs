@@ -2,7 +2,6 @@
 #![feature(exclusive_range_pattern)]
 #![feature(clamp)]
 #![feature(const_generics)]
-
 #![allow(incomplete_features)]
 
 #[macro_use]
@@ -13,15 +12,14 @@ mod bvh;
 mod ray;
 mod util;
 
-
 pub mod camera;
 pub mod material;
 pub mod objects;
-pub mod window;
 pub mod render;
-pub mod texture;
 pub mod scene;
+pub mod texture;
+pub mod window;
 
-pub use crate::scene::{Scene, RenderObject};
 pub use crate::render::Renderer;
+pub use crate::scene::{RenderObject, Scene};
 pub use crate::window::RenderWindow;

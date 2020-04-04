@@ -1,7 +1,7 @@
 use crate::aabb::AABB;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
-use crate::scene::{Scene, RenderObject};
+use crate::scene::{RenderObject, Scene};
 use tiny_rng::LcRng;
 
 pub struct BVHNode<'a> {

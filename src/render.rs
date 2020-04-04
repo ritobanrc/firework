@@ -1,12 +1,11 @@
 use crate::aabb::AABB;
 use crate::camera::{Camera, CameraSettings};
+use crate::ray::Ray;
 use crate::scene::{MaterialIdx, Scene};
 use crate::util::Color;
-use crate::ray::Ray;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::Vec3;
-
 
 /// Performs the ray tracing for a given ray in the world and returns it's color.
 /// TODO: Solve the inconsistency between `scene` and `bvh_root` arguments

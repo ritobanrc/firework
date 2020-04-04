@@ -2,9 +2,9 @@ use crate::aabb::AABB;
 use crate::material::IsotropicMat;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
-use crate::scene::{Scene, MaterialIdx};
+use crate::scene::{MaterialIdx, Scene};
 use crate::texture::Texture;
-use crate::util::{sphere_uv, Axis};
+use crate::util::Axis;
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Vec2, Vec3};
 
@@ -20,42 +20,55 @@ impl Sphere {
     }
 }
 
+pub fn sphere_uv(point: &Vec3) -> (f32, f32) {
+    use std::f32::consts::PI;
+    let phi = point.z.atan2(point.x);
+    let theta = point.y.asin();
+    let u = 1. - (phi + PI) / (2. * PI);
+    let v = (theta + PI / 2.) / PI;
+    (u, v)
+}
+
+pub fn solve_quadratic(a: f32, b: f32, c: f32) -> [Option<f32>; 2] {
+    let disc = b * b - 4. * a * c;
+    if disc < 0. {
+        [None, None]
+    } else if disc == 0. {
+        [Some(-b / (2. * a)), None]
+    } else {
+        [
+            Some((-b - disc.sqrt()) / (2. * a)),
+            Some((-b + disc.sqrt()) / (2. * a)),
+        ]
+    }
+}
+
 impl Hitable for Sphere {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, _rand: &mut LcRng) -> Option<RaycastHit> {
-        let v = *r.origin();
-        let a = r.direction().dot(*r.direction());
-        let b = v.dot(*r.direction());
-        let c = v.dot(v) - self.radius * self.radius;
-        let disc = b * b - a * c;
+        let o = *r.origin();
+        let d = *r.direction();
+        let a = d.dot(d);
+        let b = 2. * o.dot(d);
+        let c = o.dot(o) - self.radius * self.radius;
 
-        if disc > 0.0 {
-            fn roots(a: f32, b: f32, c: f32, t_max: f32, t_min: f32) -> Option<f32> {
-                let lhs = -b;
-                let rhs = (b * b - a * c).sqrt();
-                let temp = (lhs - rhs) / a;
-                if temp < t_max && temp > t_min {
-                    return Some(temp);
-                }
-                let temp = (lhs + rhs) / a;
-                if temp < t_max && temp > t_min {
-                    return Some(temp);
-                }
-
-                None
-            }
-
-            if let Some(t) = roots(a, b, c, t_max, t_min) {
-                let point = r.point(t);
-                Some(RaycastHit {
-                    t,
-                    point,
-                    normal: point / self.radius,
-                    material: self.material,
-                    uv: sphere_uv(&(point / self.radius)),
-                })
+        if let [Some(t1), t2] = solve_quadratic(a, b, c) {
+            let t = if t1 < t_max && t1 > t_min {
+                t1
             } else {
-                None
-            }
+                match t2 {
+                    Some(t2) if t2 < t_max && t2 > t_min => t2,
+                    _ => return None,
+                }
+            };
+
+            let point = r.point(t);
+            Some(RaycastHit {
+                t,
+                point,
+                normal: point / self.radius,
+                material: self.material,
+                uv: sphere_uv(&(point / self.radius)),
+            })
         } else {
             None
         }
@@ -65,6 +78,99 @@ impl Hitable for Sphere {
         Some(AABB::new(
             -Vec3::one() * self.radius,
             Vec3::one() * self.radius,
+        ))
+    }
+}
+
+/// A vertically oriented cylinder, with a given radius and height
+pub struct Cylinder {
+    radius: f32,
+    height: f32,
+    max_phi: f32,
+    material: MaterialIdx,
+}
+
+impl Cylinder {
+    /// Creates a cylinder with the given radius and height
+    pub fn new(radius: f32, height: f32, material: MaterialIdx) -> Self {
+        Cylinder {
+            radius,
+            height,
+            material,
+            max_phi: 360f32.to_radians(),
+        }
+    }
+
+    /// Creates a cylinder with the given radius and height, that only goes around for `phi` degrees.
+    pub fn partial(radius: f32, height: f32, phi: f32, material: MaterialIdx) -> Self {
+        Cylinder {
+            radius,
+            height,
+            material,
+            max_phi: phi.to_radians(),
+        }
+    }
+}
+
+impl Hitable for Cylinder {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, _rand: &mut LcRng) -> Option<RaycastHit> {
+        let o = r.origin();
+        let d = r.direction();
+        let a = d.x * d.x + d.z * d.z;
+        let b = 2. * (d.x * o.x + d.z * o.z);
+        let c = o.x * o.x + o.z * o.z - self.radius * self.radius;
+
+        let disc = b * b - 4. * a * c;
+        if disc > 0.0 {
+            if let [Some(t1), t2] = solve_quadratic(a, b, c) {
+                // define a closure to check if any t results in a hit
+                let check_solution = |t| {
+                    if t > t_max || t < t_min {
+                        return None; // this is returning from teh closure
+                    }
+                    let point = r.point(t);
+                    let phi = {
+                        let phi = point.z.atan2(point.x);
+                        if phi < 0. {
+                            phi + std::f32::consts::PI * 2.
+                        } else {
+                            phi
+                        }
+                    };
+                    if point.y > 0. && point.y < self.height
+                    /*&& phi < self.max_phi */
+                    {
+                        let u = phi / self.max_phi;
+                        let v = point.y / self.height;
+                        let dpdu = Vec3::new(-self.max_phi * point.z, 0., self.max_phi * point.x);
+                        let dpdv = self.height * Vec3::unit_y();
+                        Some(RaycastHit {
+                            t: t1,
+                            point,
+                            normal: dpdu.cross(dpdv).normalized(),
+                            material: self.material,
+                            uv: (u, v),
+                        })
+                    } else {
+                        None
+                    }
+                };
+                if let Some(hit) = check_solution(t1) {
+                    return Some(hit);
+                } else if let Some(t2) = t2 {
+                    if let Some(hit) = check_solution(t2) {
+                        return Some(hit);
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        Some(AABB::new(
+            Vec3::new(-self.radius, -self.radius, 0.),
+            Vec3::new(self.radius, self.radius, self.height),
         ))
     }
 }

@@ -1,4 +1,3 @@
-use std::f32::consts::PI;
 use tiny_rng::Rand;
 use ultraviolet::Vec3;
 
@@ -71,14 +70,6 @@ pub(crate) fn schlick(cosine: f32, ref_idx: f32) -> f32 {
     let r0 = (1. - ref_idx) / (1. + ref_idx);
     let r0 = r0 * r0;
     r0 + (1. - r0) * (1. - cosine).powf(5.)
-}
-
-pub fn sphere_uv(point: &Vec3) -> (f32, f32) {
-    let phi = point.z.atan2(point.x);
-    let theta = point.y.asin();
-    let u = 1. - (phi + PI) / (2. * PI);
-    let v = (theta + PI / 2.) / PI;
-    (u, v)
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

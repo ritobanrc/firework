@@ -1,7 +1,7 @@
+use crate::ray::Ray;
 use crate::render::RaycastHit;
 use crate::texture::{ConstantTexture, Texture};
 use crate::util::{random_in_unit_sphere, reflect, refract, schlick};
-use crate::ray::Ray;
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::Vec3;
 
@@ -46,7 +46,7 @@ impl LambertianMat {
         }
     }
 
-    /// Crates a new Lambertian Material with a given albedo color. Equivalent to 
+    /// Crates a new Lambertian Material with a given albedo color. Equivalent to
     /// a `ConstantTexture`
     /// color)
     /// ```
@@ -154,7 +154,9 @@ pub struct EmissiveMat {
 
 impl EmissiveMat {
     pub fn new<T: Texture + Sync + 'static>(albedo: T) -> EmissiveMat {
-        EmissiveMat { albedo: Box::new(albedo) }
+        EmissiveMat {
+            albedo: Box::new(albedo),
+        }
     }
 
     pub fn with_color(albedo: Vec3) -> EmissiveMat {

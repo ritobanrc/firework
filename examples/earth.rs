@@ -1,12 +1,12 @@
-use firework::render::{RenderObject, Scene};
-use firework::objects::Sphere;
 use firework::camera::CameraSettings;
-use firework::render::Renderer;
-use firework::window::RenderWindow;
 use firework::material::LambertianMat;
+use firework::objects::Sphere;
+use firework::render::Renderer;
+use firework::scene::{RenderObject, Scene};
 use firework::texture::ImageTexture;
-use ultraviolet::Vec3;
+use firework::window::RenderWindow;
 use image::open;
+use ultraviolet::Vec3;
 
 /// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
 /// TODO: Don't have hardcoded SKY_BLUE and SKY_WHITE colors.
@@ -37,7 +37,6 @@ pub fn earth_scene() -> Scene<'static> {
     scene
 }
 
-
 fn main() {
     let scene = earth_scene();
 
@@ -53,13 +52,7 @@ fn main() {
 
     let render = renderer.render(&scene);
 
-    let window = RenderWindow::new(
-        "Earth",
-        Default::default(),
-        renderer.width,
-        renderer.height,
-    );
+    let window = RenderWindow::new("Earth", Default::default(), renderer.width, renderer.height);
 
     window.display(&render);
 }
-

@@ -1,10 +1,9 @@
 use crate::aabb::AABB;
 use crate::material::Material;
 use crate::ray::Ray;
+use crate::render::{Hitable, RaycastHit};
 use tiny_rng::LcRng;
 use ultraviolet::{Mat3, Rotor3, Vec3};
-use crate::render::{RaycastHit, Hitable};
-
 
 /// Used to index `Material`s in a `Scene`
 pub type MaterialIdx = usize;
@@ -47,7 +46,7 @@ impl<'a> Scene<'a> {
     /// Adds a material to the `Scene` and returns it's `MaterialIdx`
     /// ```
     /// use firework::Scene;
-    /// use firework::material::LambertianMat; 
+    /// use firework::material::LambertianMat;
     /// use ultraviolet::Vec3;
     /// let mut scene = Scene::new();
     /// let red = scene.add_material(LambertianMat::with_color(Vec3::new(1., 0., 0.)));
@@ -220,4 +219,3 @@ impl Hitable for RenderObject<'_> {
         self.aabb.clone()
     }
 }
-

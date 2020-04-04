@@ -1,14 +1,14 @@
 use firework::camera::CameraSettings;
+use firework::material::{DielectricMat, EmissiveMat, LambertianMat, MetalMat};
+use firework::objects::{ConstantMedium, Rect3d, Sphere, XZRect};
 use firework::render::Renderer;
-use firework::objects::{Sphere, Rect3d, XZRect, ConstantMedium};
 use firework::texture::{ConstantTexture, ImageTexture, TurbulenceTexture};
-use firework::{Scene, RenderObject};
-use firework::material::{LambertianMat, EmissiveMat, DielectricMat, MetalMat};
 use firework::window::{save_image, RenderWindow};
-use std::time;
-use tiny_rng::{Rng, Rand};
-use ultraviolet::{Vec3, Rotor3};
+use firework::{RenderObject, Scene};
 use image::open;
+use std::time;
+use tiny_rng::{Rand, Rng};
+use ultraviolet::{Rotor3, Vec3};
 
 fn final_scene(rand: &mut impl Rand) -> Scene<'static> {
     let mut scene = Scene::new();
@@ -22,15 +22,14 @@ fn final_scene(rand: &mut impl Rand) -> Scene<'static> {
         for z in 0..20 {
             let pos = origin + Vec3::new(x as f32, 0., z as f32);
             let size = Vec3::new(1., rand.rand_f32() + 0.01, 1.);
-            scene.add_object(
-                RenderObject::new(Rect3d::with_size(size, ground))
-                    .position_vec(pos)
-            );
+            scene.add_object(RenderObject::new(Rect3d::with_size(size, ground)).position_vec(pos));
         }
     }
 
     let light = scene.add_material(EmissiveMat::with_color(7. * Vec3::one()));
-    scene.add_object(RenderObject::new(XZRect::new(1.23, 4.23, 1.47, 4.12, 5.54, light)));
+    scene.add_object(RenderObject::new(XZRect::new(
+        1.23, 4.23, 1.47, 4.12, 5.54, light,
+    )));
 
     let brown = scene.add_material(LambertianMat::with_color(Vec3::new(0.7, 0.3, 0.1)));
     scene.add_object(RenderObject::new(Sphere::new(0.5, brown)).position(4., 4., 2.));
@@ -43,11 +42,11 @@ fn final_scene(rand: &mut impl Rand) -> Scene<'static> {
 
     scene.add_object(RenderObject::new(Sphere::new(0.7, glass)).position(3.6, 1.5, 1.45));
     let volume = ConstantMedium::new(
-                RenderObject::new(Sphere::new(0.7, glass)).position(3.6, 1.5, 1.45),
-                0.2, 
-                Box::new(ConstantTexture::new(Vec3::new(0.2, 0.4, 0.9))),
-                &mut scene
-                );
+        RenderObject::new(Sphere::new(0.7, glass)).position(3.6, 1.5, 1.45),
+        0.2,
+        Box::new(ConstantTexture::new(Vec3::new(0.2, 0.4, 0.9))),
+        &mut scene,
+    );
     scene.add_object(RenderObject::new(volume));
 
     let image = open("./earthmap.jpg").unwrap();
@@ -56,27 +55,26 @@ fn final_scene(rand: &mut impl Rand) -> Scene<'static> {
 
     let noise = TurbulenceTexture::new(5, 10.);
     let noise = scene.add_material(LambertianMat::new(noise));
-    scene.add_object(RenderObject::new(Sphere::new(0.8, noise)).position(2.2,2.8, 3.0));
+    scene.add_object(RenderObject::new(Sphere::new(0.8, noise)).position(2.2, 2.8, 3.0));
 
-
-    let mut subscene = Scene::new();
-    let white = subscene.add_material(LambertianMat::with_color(0.73 * Vec3::one()));
+    //let mut subscene = Scene::new();
+    let white = scene.add_material(LambertianMat::with_color(0.73 * Vec3::one()));
     for _ in 0..1000 {
-        let pos = 1.65 * Vec3::new(rand.rand_f32(), rand.rand_f32(), rand.rand_f32());
-        subscene.add_object(RenderObject::new(Sphere::new(0.1, white)).position_vec(pos));
+        let pos = 1.65 * Vec3::new(rand.rand_f32(), rand.rand_f32(), rand.rand_f32())
+            + Vec3::new(1., 2.7, 3.95);
+        scene.add_object(RenderObject::new(Sphere::new(0.1, white)).position_vec(pos));
     }
 
-    scene.add_object(RenderObject::new(subscene).rotate(Rotor3::from_rotation_xz(15.)).position(1., 2.7, 3.95));
+    //scene.add_object(RenderObject::new(subscene).rotate(Rotor3::from_rotation_xz(15.)).position(1., 2.7, 3.95));
 
     let volume = ConstantMedium::new(
-                RenderObject::new(Sphere::new(5000., 0)),
-                0.0001, 
-                Box::new(ConstantTexture::new(Vec3::one())),
-                &mut scene
-                );
+        RenderObject::new(Sphere::new(5000., 0)),
+        0.0001,
+        Box::new(ConstantTexture::new(Vec3::one())),
+        &mut scene,
+    );
 
     scene.add_object(RenderObject::new(volume));
-
 
     scene
 }
@@ -84,7 +82,6 @@ fn final_scene(rand: &mut impl Rand) -> Scene<'static> {
 fn main() {
     let mut rng = Rng::new(12345);
     let scene = final_scene(&mut rng);
-
 
     let start = time::Instant::now();
 
@@ -96,7 +93,7 @@ fn main() {
     let renderer = Renderer::default()
         .width(600)
         .height(800)
-        .samples(10000)
+        .samples(10_000)
         .use_bvh(true)
         .camera(camera);
 
@@ -107,7 +104,6 @@ fn main() {
 
     save_image(&render, "part2_final.png", renderer.width, renderer.height);
 
-
     let window = RenderWindow::new(
         "Part 2 Final Scene",
         Default::default(),
@@ -117,4 +113,3 @@ fn main() {
 
     window.display(&render);
 }
-
