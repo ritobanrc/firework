@@ -102,8 +102,6 @@ fn main() {
     let end = time::Instant::now();
     println!("Finished Rendering in {} s", (end - start).as_secs());
 
-    save_image(&render, "part2_final.png", renderer.width, renderer.height);
-
     let window = RenderWindow::new(
         "Part 2 Final Scene",
         Default::default(),

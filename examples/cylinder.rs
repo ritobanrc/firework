@@ -1,6 +1,6 @@
 use firework::camera::CameraSettings;
 use firework::material::{EmissiveMat, LambertianMat};
-use firework::objects::{Cylinder, XZRect, YZRect};
+use firework::objects::{Cylinder, Disk, XZRect, YZRect};
 use firework::render::Renderer;
 use firework::scene::{RenderObject, Scene};
 use firework::texture::ImageTexture;
@@ -34,30 +34,42 @@ pub fn objects_scene() -> Scene<'static> {
     let uv_image_mat = scene.add_material(LambertianMat::new(ImageTexture::new(uvmap)));
     scene.add_object(RenderObject::new(Cylinder::new(2., 3., uv_image_mat)).position(-2.8, 0., 0.));
 
+    let blue = scene.add_material(LambertianMat::with_color(Vec3::new(0., 0.3, 0.5)));
+    scene.add_object(RenderObject::new(Disk::new(2., blue)).position(-2.8, 3., 0.));
+
     // NOTE: The cylinder normals face outward by default, but we want the lighting to be correct
     // from both sides, at least on the cylinder where we can see quite a lot on both sides.
     // Therefore, I'm creating two copies of the same cylinder, scaled slightly differently, with
     // the normals flipped on the inner one.
     scene.add_object(
-        RenderObject::new(Cylinder::partial(2., 3., 300., uv_image_mat))
-            .position(3.0, 1., 1.)
+        RenderObject::new(Cylinder::partial(1.5, 3., 300., uv_image_mat))
+            .position(3.0, 1.5, 1.)
             .rotate(Rotor3::from_euler_angles(
                 90f32.to_radians(),
                 30f32.to_radians(),
                 -35f32.to_radians(),
-            ))
+            )),
     );
     scene.add_object(
-        RenderObject::new(Cylinder::partial(1.99, 3., 300., uv_image_mat))
-            .position(3.0, 1., 1.)
+        RenderObject::new(Cylinder::partial(1.49, 3., 300., uv_image_mat))
+            .position(3.0, 1.5, 1.)
             .rotate(Rotor3::from_euler_angles(
                 90f32.to_radians(),
                 30f32.to_radians(),
                 -35f32.to_radians(),
             ))
-            .flip_normals()
+            .flip_normals(),
     );
 
+    scene.add_object(
+        RenderObject::new(Disk::partial(1.5, 300., 0.8, uv_image_mat))
+            .position(3.0, 1.5, 01.)
+            .rotate(Rotor3::from_euler_angles(
+                90f32.to_radians(),
+                30f32.to_radians(),
+                -35f32.to_radians(),
+            )),
+    );
     let grey = scene.add_material(LambertianMat::with_color(Vec3::broadcast(0.5)));
     scene.add_object(RenderObject::new(XZRect::new(
         -100., 100., -100., 100., 0., grey,
@@ -84,7 +96,7 @@ fn main() {
     let renderer = Renderer::default()
         .width(960)
         .height(540)
-        .samples(512)
+        .samples(128)
         .camera(camera);
 
     let render = renderer.render(&scene);

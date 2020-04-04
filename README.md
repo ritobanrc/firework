@@ -14,4 +14,4 @@ Major changes
 
 ![Part 2 Final Render](part2_final.png)
 
-Rendered in 9 hours.
+Rendered in 3.36 hours.
