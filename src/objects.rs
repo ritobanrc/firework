@@ -138,16 +138,16 @@ impl Hitable for Cylinder {
                         }
                     };
                     if point.y > 0. && point.y < self.height
-                    /*&& phi < self.max_phi */
-                    {
+                    && phi < self.max_phi {
                         let u = phi / self.max_phi;
                         let v = point.y / self.height;
-                        let dpdu = Vec3::new(-self.max_phi * point.z, 0., self.max_phi * point.x);
-                        let dpdv = self.height * Vec3::unit_y();
+                        //let dpdu = Vec3::new(-self.max_phi * point.z, 0., self.max_phi * point.x);
+                        //let dpdv = self.height * Vec3::unit_y();
                         Some(RaycastHit {
                             t: t1,
                             point,
-                            normal: dpdu.cross(dpdv).normalized(),
+                            //normal: dpdu.cross(dpdv).normalized(),
+                            normal: Vec3::new(point.x / self.radius, 0., point.z / self.radius),
                             material: self.material,
                             uv: (u, v),
                         })
