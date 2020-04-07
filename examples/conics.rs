@@ -1,6 +1,6 @@
 use firework::camera::CameraSettings;
 use firework::material::{EmissiveMat, LambertianMat};
-use firework::objects::{Cylinder, Disk, XZRect, YZRect};
+use firework::objects::{Cylinder, Disk, Cone, XZRect, YZRect};
 use firework::render::Renderer;
 use firework::scene::{RenderObject, Scene};
 use firework::texture::ImageTexture;
@@ -32,10 +32,18 @@ pub fn objects_scene() -> Scene<'static> {
 
     let uvmap = open("uvmap.png").unwrap();
     let uv_image_mat = scene.add_material(LambertianMat::new(ImageTexture::new(uvmap)));
-    scene.add_object(RenderObject::new(Cylinder::new(2., 3., uv_image_mat)).position(-2.8, 0., 0.));
+    scene.add_object(RenderObject::new(Cylinder::new(2., 3., uv_image_mat)).position(-4.2, 0., 0.));
 
-    let blue = scene.add_material(LambertianMat::with_color(Vec3::new(0., 0.3, 0.5)));
-    scene.add_object(RenderObject::new(Disk::new(2., blue)).position(-2.8, 3., 0.));
+    let blue = scene.add_material(LambertianMat::with_color(Vec3::new(0., 0.2, 0.4)));
+    scene.add_object(RenderObject::new(Disk::new(2., blue)).position(-4.2, 3., 0.));
+
+
+    scene.add_object(
+        RenderObject::new(Cone::new(2., 3., uv_image_mat))
+        .position(-1., 0., -4.)
+    );
+
+
 
     // NOTE: The cylinder normals face outward by default, but we want the lighting to be correct
     // from both sides, at least on the cylinder where we can see quite a lot on both sides.
@@ -63,19 +71,22 @@ pub fn objects_scene() -> Scene<'static> {
 
     scene.add_object(
         RenderObject::new(Disk::partial(1.5, 300., 0.8, uv_image_mat))
-            .position(3.0, 1.5, 01.)
+            .position(3.0, 1.5, 1.)
             .rotate(Rotor3::from_euler_angles(
                 90f32.to_radians(),
                 30f32.to_radians(),
                 -35f32.to_radians(),
             )),
     );
+
+
     let grey = scene.add_material(LambertianMat::with_color(Vec3::broadcast(0.5)));
     scene.add_object(RenderObject::new(XZRect::new(
         -100., 100., -100., 100., 0., grey,
     )));
+    
 
-    let light = scene.add_material(EmissiveMat::with_color(Vec3::broadcast(20.)));
+    let light = scene.add_material(EmissiveMat::with_color(Vec3::broadcast(8.)));
     scene.add_object(
         RenderObject::new(YZRect::new(0., 20., 0., 10., -3., light))
             .rotate(Rotor3::from_rotation_xz(-30.))
@@ -90,19 +101,19 @@ fn main() {
     let scene = objects_scene();
 
     let camera = CameraSettings::default()
-        .cam_pos(Vec3::new(6., 4., -6.))
+        .cam_pos(Vec3::new(6., 4., -7.))
         .look_at(Vec3::new(0., 1.5, 0.))
         .field_of_view(60.);
     let renderer = Renderer::default()
         .width(960)
         .height(540)
-        .samples(128)
+        .samples(512)
         .camera(camera);
 
     let render = renderer.render(&scene);
 
     let window = RenderWindow::new(
-        "Cylinder",
+        "conics",
         Default::default(),
         renderer.width,
         renderer.height,
