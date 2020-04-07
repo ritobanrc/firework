@@ -3,12 +3,12 @@ use firework::material::{DielectricMat, EmissiveMat, LambertianMat, MetalMat};
 use firework::objects::{ConstantMedium, Rect3d, Sphere, XZRect};
 use firework::render::Renderer;
 use firework::texture::{ConstantTexture, ImageTexture, TurbulenceTexture};
-use firework::window::{save_image, RenderWindow};
+use firework::window::RenderWindow;
 use firework::{RenderObject, Scene};
 use image::open;
 use std::time;
 use tiny_rng::{Rand, Rng};
-use ultraviolet::{Rotor3, Vec3};
+use ultraviolet::Vec3;
 
 fn final_scene(rand: &mut impl Rand) -> Scene<'static> {
     let mut scene = Scene::new();
