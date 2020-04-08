@@ -102,7 +102,7 @@ impl Hitable for Scene<'_> {
 pub struct RenderObject<'a> {
     obj: Box<dyn Hitable + Sync + 'a>,
     position: Vec3,
-    rotation: Rotor3, // TODO: Replace this with ultraviolet::Rotor and/or
+    //rotation: Rotor3,
     rotation_mat: Mat3,
     inv_rotation_mat: Mat3,
     flip_normals: bool,
@@ -116,7 +116,7 @@ impl<'a> RenderObject<'a> {
         RenderObject {
             obj: Box::new(obj),
             position: Vec3::zero(),
-            rotation: Rotor3::identity(),
+            //rotation: Rotor3::identity(),
             rotation_mat: Mat3::identity(),
             inv_rotation_mat: Mat3::identity(),
             flip_normals: false,
@@ -143,7 +143,7 @@ impl<'a> RenderObject<'a> {
     /// Sets the rotation of the `RenderObject` on the Y Axis
     #[inline(always)]
     pub fn rotate(mut self, rotor: Rotor3) -> RenderObject<'a> {
-        self.rotation = rotor;
+        //self.rotation = rotor;
         self.rotation_mat = rotor.into_matrix();
         self.inv_rotation_mat = rotor.reversed().into_matrix();
         self.update_bounding_box();
@@ -161,7 +161,11 @@ impl<'a> RenderObject<'a> {
         self.aabb = if let Some(bbox) = self.obj.bounding_box() {
             // First, rotate the bounding box
             // If there is a signficant rotation
-            let rotated_aabb = if self.rotation.mag_sq() > 0.001 {
+            let cos_trace = { 
+                let trace = self.rotation_mat[0][0] + self.rotation_mat[1][1] + self.rotation_mat[2][2];
+                0.5 * (trace - 1.) // .acos()
+            };
+            let rotated_aabb = if cos_trace < 0.999 {
                 let mut min = 10e9 * Vec3::one();
                 let mut max = -10e9 * Vec3::one();
                 for (i, j, k) in iproduct!(0..2, 0..2, 0..2) {
@@ -193,7 +197,11 @@ impl<'a> RenderObject<'a> {
 
 impl Hitable for RenderObject<'_> {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
-        let new_ray = if self.rotation.mag_sq() > 0.001 {
+        let cos_trace = { 
+            let trace = self.rotation_mat[0][0] + self.rotation_mat[1][1] + self.rotation_mat[2][2];
+            0.5 * (trace - 1.) // .acos()
+        };
+        let new_ray = if cos_trace < 0.999 {
             Ray::new(
                 self.inv_rotation_mat * (*r.origin() - self.position),
                 self.inv_rotation_mat * *r.direction(),

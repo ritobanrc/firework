@@ -1,6 +1,7 @@
 mod cone;
 mod cylinder;
 mod disk;
+mod mesh;
 mod rect;
 mod rect3d;
 mod sphere;
@@ -10,6 +11,7 @@ pub use cone::Cone;
 pub use cylinder::Cylinder;
 pub use disk::Disk;
 pub use rect::{XYRect, XZRect, YZRect};
+pub use mesh::{TriangleMesh, Triangle};
 pub use rect3d::Rect3d;
 pub use sphere::Sphere;
 pub use volume::ConstantMedium;

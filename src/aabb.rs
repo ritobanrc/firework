@@ -39,4 +39,11 @@ impl AABB {
 
         AABB { min, max }
     }
+
+    pub fn expand_to_point(&self, point: Vec3) -> Self {
+        let min = self.min.min_by_component(point);
+        let max = self.max.max_by_component(point);
+
+        AABB { min, max }
+    }
 }

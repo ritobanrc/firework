@@ -100,3 +100,19 @@ impl Axis {
         }
     }
 }
+
+pub fn max_component_idx(vec: Vec3) -> usize {
+    if vec.x > vec.y {
+        if vec.z > vec.x {
+            2
+        } else {
+            0
+        }
+    } else {
+        if vec.z > vec.y {
+            2
+        } else {
+            1
+        }
+    }
+}
