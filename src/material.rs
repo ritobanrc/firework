@@ -3,18 +3,12 @@ use crate::render::RaycastHit;
 use crate::texture::{ConstantTexture, Texture};
 use crate::util::{random_in_unit_sphere, reflect, refract, schlick};
 use tiny_rng::{LcRng, Rand};
-use ultraviolet::Vec3;
+use ultraviolet::{Vec2, Vec3};
 
-// IDEA: Currently, to get a Material from it's index, we need to first get the `MaterialLibrary`
-// and then call `get_material` on it. It would be more readable if we could simply call `get` on
-// the `MaterialIdx` itself. However, we cannot implement functions on aliased types. So instead,
-// we could create a `LibraryIndex` trait, that can `get` in a `Library`, and then implement those
-// for `MaterialIdx` and `MaterialLibrary` respectively (and perhaps use the same system for other
-// pieces)
 pub trait Material {
     fn scatter(&self, r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult>;
 
-    fn emit(&self, _uv: (f32, f32), _point: &Vec3) -> Vec3 {
+    fn emit(&self, _uv: Vec2, _point: &Vec3) -> Vec3 {
         Vec3::zero()
     }
 }
@@ -171,7 +165,7 @@ impl Material for EmissiveMat {
         None
     }
 
-    fn emit(&self, uv: (f32, f32), point: &Vec3) -> Vec3 {
+    fn emit(&self, uv: Vec2, point: &Vec3) -> Vec3 {
         self.albedo.sample(uv, point)
     }
 }

@@ -1,6 +1,6 @@
 use firework::camera::CameraSettings;
 use firework::material::{EmissiveMat, LambertianMat};
-use firework::objects::{Cylinder, Disk, Cone, XZRect, YZRect};
+use firework::objects::{Cone, Cylinder, Disk, XZRect, YZRect};
 use firework::render::Renderer;
 use firework::scene::{RenderObject, Scene};
 use firework::texture::ImageTexture;
@@ -37,13 +37,7 @@ pub fn objects_scene() -> Scene<'static> {
     let blue = scene.add_material(LambertianMat::with_color(Vec3::new(0., 0.2, 0.4)));
     scene.add_object(RenderObject::new(Disk::new(2., blue)).position(-4.2, 3., 0.));
 
-
-    scene.add_object(
-        RenderObject::new(Cone::new(2., 3., uv_image_mat))
-        .position(-1., 0., -4.)
-    );
-
-
+    scene.add_object(RenderObject::new(Cone::new(2., 3., uv_image_mat)).position(-1., 0., -4.));
 
     // NOTE: The cylinder normals face outward by default, but we want the lighting to be correct
     // from both sides, at least on the cylinder where we can see quite a lot on both sides.
@@ -79,12 +73,10 @@ pub fn objects_scene() -> Scene<'static> {
             )),
     );
 
-
     let grey = scene.add_material(LambertianMat::with_color(Vec3::broadcast(0.5)));
     scene.add_object(RenderObject::new(XZRect::new(
         -100., 100., -100., 100., 0., grey,
     )));
-    
 
     let light = scene.add_material(EmissiveMat::with_color(Vec3::broadcast(8.)));
     scene.add_object(

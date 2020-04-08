@@ -1,12 +1,10 @@
 use crate::aabb::AABB;
+use crate::objects::solve_quadratic;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::scene::MaterialIdx;
 use tiny_rng::LcRng;
-use crate::objects::solve_quadratic;
-use ultraviolet::Vec3;
-
-
+use ultraviolet::{Vec2, Vec3};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Sphere {
@@ -20,16 +18,14 @@ impl Sphere {
     }
 }
 
-
-pub fn sphere_uv(point: &Vec3) -> (f32, f32) {
+pub fn sphere_uv(point: &Vec3) -> Vec2 {
     use std::f32::consts::PI;
     let phi = point.z.atan2(point.x);
     let theta = point.y.asin();
     let u = 1. - (phi + PI) / (2. * PI);
     let v = (theta + PI / 2.) / PI;
-    (u, v)
+    Vec2::new(u, v)
 }
-
 
 impl Hitable for Sphere {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, _rand: &mut LcRng) -> Option<RaycastHit> {

@@ -6,9 +6,9 @@ use firework::scene::{RenderObject, Scene};
 use firework::window::RenderWindow;
 use std::f32::consts::PI;
 use std::time;
-use ultraviolet::Vec3;
+use ultraviolet::{Vec2, Vec3};
 
-pub fn sphere_uv(point: &Vec3) -> (f32, f32) {
+pub fn sphere_uv(point: &Vec3) -> Vec2 {
     let phi = point.z.atan2(point.x);
     let theta = point.y.asin();
     let u = 1. - (phi + PI) / (2. * PI);

@@ -1,17 +1,17 @@
-mod sphere;
+mod cone;
 mod cylinder;
 mod disk;
-mod cone;
 mod rect;
 mod rect3d;
+mod sphere;
 mod volume;
 
-pub use sphere::Sphere;
+pub use cone::Cone;
 pub use cylinder::Cylinder;
 pub use disk::Disk;
-pub use cone::Cone;
-pub use rect::{XYRect, YZRect, XZRect};
+pub use rect::{XYRect, XZRect, YZRect};
 pub use rect3d::Rect3d;
+pub use sphere::Sphere;
 pub use volume::ConstantMedium;
 
 pub(crate) fn solve_quadratic(a: f32, b: f32, c: f32) -> [Option<f32>; 2] {
@@ -27,4 +27,3 @@ pub(crate) fn solve_quadratic(a: f32, b: f32, c: f32) -> [Option<f32>; 2] {
         ]
     }
 }
-

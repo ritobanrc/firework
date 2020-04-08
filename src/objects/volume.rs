@@ -1,11 +1,11 @@
 use crate::aabb::AABB;
+use crate::material::IsotropicMat;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::scene::{MaterialIdx, Scene};
 use crate::texture::Texture;
 use tiny_rng::{LcRng, Rand};
-use crate::material::IsotropicMat;
-use ultraviolet::Vec3;
+use ultraviolet::{Vec2, Vec3};
 
 pub struct ConstantMedium {
     obj: Box<dyn Hitable + Sync>,
@@ -48,7 +48,7 @@ impl Hitable for ConstantMedium {
                         point: r.point(t),
                         normal: Vec3::unit_y(), // arbitrary
                         material: self.material,
-                        uv: (0., 0.),
+                        uv: Vec2::new(0., 0.),
                     });
                 }
             }

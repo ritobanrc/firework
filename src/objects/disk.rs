@@ -3,8 +3,7 @@ use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::scene::MaterialIdx;
 use tiny_rng::LcRng;
-use ultraviolet::Vec3;
-
+use ultraviolet::{Vec2, Vec3};
 
 /// Creates a disk facing upwards with a given radius.
 /// The `phi_max` parameter can be used to create a sector with the given angle.
@@ -78,7 +77,7 @@ impl Hitable for Disk {
             point,
             normal: Vec3::unit_y(),
             material: self.material,
-            uv: (u, v),
+            uv: Vec2::new(u, v),
         })
     }
 

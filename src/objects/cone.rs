@@ -1,11 +1,10 @@
 use crate::aabb::AABB;
+use crate::objects::solve_quadratic;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::scene::MaterialIdx;
-use crate::objects::solve_quadratic;
 use tiny_rng::LcRng;
-use ultraviolet:: Vec3;
-
+use ultraviolet::{Vec2, Vec3};
 
 pub struct Cone {
     radius: f32,
@@ -15,7 +14,11 @@ pub struct Cone {
 
 impl Cone {
     pub fn new(radius: f32, height: f32, material: MaterialIdx) -> Cone {
-        Cone { radius, height, material }
+        Cone {
+            radius,
+            height,
+            material,
+        }
     }
 }
 
@@ -47,41 +50,37 @@ impl Hitable for Cone {
         // Note that y and z are switched (because in the equation, z is the up direction, while
         // in the renderer, y is).
         let r2_div_h2 = self.radius * self.radius / (self.height * self.height);
-        let a = d.x * d.x + d.z * d.z  - r2_div_h2 * d.y * d.y;
+        let a = d.x * d.x + d.z * d.z - r2_div_h2 * d.y * d.y;
         let b = 2. * (d.x * o.x + d.z * o.z - r2_div_h2 * d.y * (o.y - self.height));
         let c = o.x * o.x + o.z * o.z - r2_div_h2 * (o.y - self.height) * (o.y - self.height);
 
         if let [Some(t1), t2] = solve_quadratic(a, b, c) {
             let check_solution = |t| {
                 if t > t_max || t < t_min {
-                    return None
+                    return None;
                 }
                 let point = r.point(t);
                 if point.y < 0. || point.y > self.height {
-                    return None
+                    return None;
                 }
                 let v = point.y / self.height;
                 let phi = (point.x / (self.radius * (1. - v))).acos();
                 let u = phi / (2. * std::f32::consts::PI);
                 let dpdu = Vec3::new(-point.z, 0., point.x);
-                let dpdv = Vec3::new(
-                    -point.x/(1. - v),
-                    self.height,
-                    -point.z / (1. - v),
-                    );
+                let dpdv = Vec3::new(-point.x / (1. - v), self.height, -point.z / (1. - v));
                 return Some(RaycastHit {
                     t,
                     point,
                     normal: dpdv.cross(dpdu).normalized(),
                     material: self.material,
-                    uv: (u, v),
-                })
+                    uv: Vec2::new(u, v),
+                });
             };
 
             if let Some(hit) = check_solution(t1) {
                 return Some(hit);
             } else if let Some(t2) = t2 {
-                return check_solution(t2)          
+                return check_solution(t2);
             }
         }
         None

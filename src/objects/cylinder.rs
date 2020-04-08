@@ -1,11 +1,10 @@
 use crate::aabb::AABB;
+use crate::objects::solve_quadratic;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::scene::MaterialIdx;
-use crate::objects::solve_quadratic;
 use tiny_rng::LcRng;
-use ultraviolet::Vec3;
-
+use ultraviolet::{Vec2, Vec3};
 
 /// A vertically oriented cylinder, with a given radius and height
 pub struct Cylinder {
@@ -73,7 +72,7 @@ impl Hitable for Cylinder {
                             //normal: dpdu.cross(dpdv).normalized(),
                             normal: Vec3::new(point.x / self.radius, 0., point.z / self.radius),
                             material: self.material,
-                            uv: (u, v),
+                            uv: Vec2::new(u, v),
                         })
                     } else {
                         None
@@ -82,7 +81,7 @@ impl Hitable for Cylinder {
                 if let Some(hit) = check_solution(t1) {
                     return Some(hit);
                 } else if let Some(t2) = t2 {
-                    return check_solution(t2)
+                    return check_solution(t2);
                 }
             }
         }

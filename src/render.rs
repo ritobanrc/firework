@@ -5,7 +5,7 @@ use crate::scene::{MaterialIdx, Scene};
 use crate::util::Color;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tiny_rng::{LcRng, Rand};
-use ultraviolet::Vec3;
+use ultraviolet::{Vec2, Vec3};
 
 /// Performs the ray tracing for a given ray in the world and returns it's color.
 /// TODO: Solve the inconsistency between `scene` and `bvh_root` arguments
@@ -31,7 +31,7 @@ pub struct RaycastHit {
     pub point: Vec3,
     pub normal: Vec3,
     pub material: MaterialIdx,
-    pub uv: (f32, f32),
+    pub uv: Vec2,
 }
 
 /// Trait that allows something to be ray-tracing, i.e. something that can be hit by a ray.

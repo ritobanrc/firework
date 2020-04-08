@@ -64,7 +64,7 @@ impl<const A1: Axis, const A2: Axis> Hitable for AARect<{ A1 }, { A2 }> {
             point,
             normal: if self.flip_normal { -normal } else { normal },
             material: self.material,
-            uv: (
+            uv: Vec2::new(
                 (point[A1 as usize] - self.min.x) / (self.max.x - self.min.x),
                 (point[A2 as usize] - self.min.y) / (self.max.y - self.min.y),
             ),

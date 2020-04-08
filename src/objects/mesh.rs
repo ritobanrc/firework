@@ -1,8 +1,8 @@
-use ultraviolet::Vec3;
+use ultraviolet::{Vec3, Vec2};
 
 struct TriangleMesh {
     indicies: Vec<usize>,
     verts: Vec<Vec3>,
-    normals: Vec<Vec3>,
-    uvs: Vec<(f32, f32)>,
+    normals: Option<Vec<Vec3>>,
+    uvs: Option<Vec<Vec2>>,
 }

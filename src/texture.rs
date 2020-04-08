@@ -1,8 +1,8 @@
 use image::{GenericImageView, Pixel, Rgba};
-use ultraviolet::Vec3;
+use ultraviolet::{Vec2, Vec3};
 
 pub trait Texture {
-    fn sample(&self, uv: (f32, f32), point: &Vec3) -> Vec3;
+    fn sample(&self, uv: Vec2, point: &Vec3) -> Vec3;
 }
 
 pub struct ConstantTexture {
@@ -16,7 +16,7 @@ impl ConstantTexture {
 }
 
 impl Texture for ConstantTexture {
-    fn sample(&self, _uv: (f32, f32), _point: &Vec3) -> Vec3 {
+    fn sample(&self, _uv: Vec2, _point: &Vec3) -> Vec3 {
         self.color
     }
 }
@@ -42,7 +42,7 @@ impl CheckerTexture {
 }
 
 impl Texture for CheckerTexture {
-    fn sample(&self, uv: (f32, f32), point: &Vec3) -> Vec3 {
+    fn sample(&self, uv: Vec2, point: &Vec3) -> Vec3 {
         // TODO: Actually use proper uv coordinates
         let iter: [f32; 3] = (*point).into();
         if iter
@@ -144,7 +144,7 @@ impl PerlinNoiseTexture {
 }
 
 impl Texture for PerlinNoiseTexture {
-    fn sample(&self, _uv: (f32, f32), point: &Vec3) -> Vec3 {
+    fn sample(&self, _uv: Vec2, point: &Vec3) -> Vec3 {
         let a = PerlinNoiseTexture::noise(&(*point * self.scale));
         Vec3::one() * (a + 0.5).min(1.)
         //Vec3::new(-0.5, 0., 0.)
@@ -201,7 +201,7 @@ impl TurbulenceTexture {
 }
 
 impl Texture for TurbulenceTexture {
-    fn sample(&self, _uv: (f32, f32), point: &Vec3) -> Vec3 {
+    fn sample(&self, _uv: Vec2, point: &Vec3) -> Vec3 {
         Vec3::one() * TurbulenceTexture::turb(self.depth, *point * self.scale)
     }
 }
@@ -218,7 +218,7 @@ impl MarbleTexture {
 }
 
 impl Texture for MarbleTexture {
-    fn sample(&self, _uv: (f32, f32), point: &Vec3) -> Vec3 {
+    fn sample(&self, _uv: Vec2, point: &Vec3) -> Vec3 {
         Vec3::one()
             * 0.5
             * (1.
@@ -245,10 +245,10 @@ impl<T> Texture for ImageTexture<T>
 where
     T: GenericImageView<Pixel = Rgba<u8>>,
 {
-    fn sample(&self, uv: (f32, f32), _point: &Vec3) -> Vec3 {
+    fn sample(&self, uv: Vec2, _point: &Vec3) -> Vec3 {
         let (w, h) = self.image.dimensions();
-        let i = uv.0 * self.image.dimensions().0 as f32;
-        let j = (1. - uv.1) * self.image.dimensions().1 as f32;
+        let i = uv.x * self.image.dimensions().0 as f32;
+        let j = (1. - uv.y) * self.image.dimensions().1 as f32;
 
         let i = (i as u32).clamp(0, w - 1);
         let j = (j as u32).clamp(0, h - 1);

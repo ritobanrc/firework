@@ -1,11 +1,10 @@
 use crate::aabb::AABB;
+use crate::objects::{rect::Rect, XYRect, XZRect, YZRect};
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::scene::MaterialIdx;
 use tiny_rng::LcRng;
 use ultraviolet::Vec3;
-use crate::objects::{XYRect, XZRect, YZRect, rect::Rect};
-
 
 pub struct Rect3d {
     pos: Vec3,
