@@ -1,10 +1,11 @@
-use crate::render::{Hitable, RaycastHit};
-use crate::scene::MaterialIdx;
 use crate::aabb::AABB;
 use crate::ray::Ray;
-use tiny_rng::LcRng;
+use crate::render::{Hitable, RaycastHit};
+use crate::scene::MaterialIdx;
 use crate::util;
-use ultraviolet::{Vec3, Vec2};
+use std::sync::Arc;
+use tiny_rng::LcRng;
+use ultraviolet::{Vec2, Vec3};
 
 type TriangleIdx = usize;
 
@@ -17,21 +18,31 @@ pub struct TriangleMesh {
 }
 
 impl TriangleMesh {
-    pub fn new(verts: Vec<Vec3>, indicies: Vec<usize>, normals: Option<Vec<Vec3>>, uvs: Option<Vec<Vec2>>, material: MaterialIdx) -> Result<TriangleMesh, &'static str> {
+    pub fn new(
+        verts: Vec<Vec3>,
+        indicies: Vec<usize>,
+        normals: Option<Vec<Vec3>>,
+        uvs: Option<Vec<Vec2>>,
+        material: MaterialIdx,
+    ) -> Result<TriangleMesh, &'static str> {
         let num_verts = verts.len();
         if let Some(normals) = &normals {
             if normals.len() != num_verts {
-                return Err("TriangleMesh::new() -- normals.len() must equal verts.len()")
+                return Err("TriangleMesh::new() -- normals.len() must equal verts.len()");
             }
         }
         if let Some(uvs) = &uvs {
             if uvs.len() != num_verts {
-                return Err("TriangleMesh::new() -- uvs.len() must equal verts.len()")
+                return Err("TriangleMesh::new() -- uvs.len() must equal verts.len()");
             }
         }
 
         Ok(TriangleMesh {
-            indicies, verts, normals, uvs, material
+            indicies,
+            verts,
+            normals,
+            uvs,
+            material,
         })
     }
 
@@ -47,7 +58,7 @@ impl TriangleMesh {
 
     /// Returns the normal for each vertex of a triangle, if supplied
     pub fn get_triangle_normals(&self, idx: TriangleIdx) -> Option<[Vec3; 3]> {
-        if let Some(normals) = &self.normals { 
+        if let Some(normals) = &self.normals {
             let base_idx = 3 * idx;
             Some([
                 normals[self.indicies[base_idx]],
@@ -59,10 +70,10 @@ impl TriangleMesh {
         }
     }
 
-    /// Returns the UV supplied coordinates for a given triangle (if supplied), or 
+    /// Returns the UV supplied coordinates for a given triangle (if supplied), or
     /// (0, 0), (0, 1), and (1, 0) for each of the 3 verticies
     pub fn get_triangle_uvs(&self, idx: TriangleIdx) -> [Vec2; 3] {
-        if let Some(uv) = &self.uvs { 
+        if let Some(uv) = &self.uvs {
             let base_idx = 3 * idx;
             [
                 uv[self.indicies[base_idx]],
@@ -70,27 +81,31 @@ impl TriangleMesh {
                 uv[self.indicies[base_idx + 2]],
             ]
         } else {
-            [
-                Vec2::zero(),
-                Vec2::unit_x(),
-                Vec2::unit_y(),
-            ]
+            [Vec2::zero(), Vec2::unit_x(), Vec2::unit_y()]
         }
+    }
+
+    pub fn num_verts(&self) -> usize {
+        self.verts.len()
+    }
+
+    pub fn num_tris(&self) -> usize {
+        self.indicies.len() / 3
     }
 }
 
-pub struct Triangle<'a> {
-    mesh: &'a TriangleMesh, // I don't like this. This feel "object oriented"
+pub struct Triangle {
+    mesh: Arc<TriangleMesh>, // I don't like this. This feel "object oriented". Also, there should be a way to easily swap out Arc for Rc if the user isn't using multithreading
     index: TriangleIdx,
 }
 
-impl<'a> Triangle<'a> {
-    pub fn new(mesh: &'a TriangleMesh, index: TriangleIdx) -> Triangle {
+impl Triangle {
+    pub fn new(mesh: Arc<TriangleMesh>, index: TriangleIdx) -> Triangle {
         Triangle { mesh, index }
     }
 }
 
-impl Hitable for Triangle<'_> {
+impl Hitable for Triangle {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, _rand: &mut LcRng) -> Option<RaycastHit> {
         let [p0, p1, p2] = self.mesh.get_triangle_verts(self.index);
         // M = SPT
@@ -129,11 +144,11 @@ impl Hitable for Triangle<'_> {
         let e2 = p0t.x * p1t.y - p0t.y * p1t.x;
 
         if (e0 < 0. || e1 < 0. || e2 < 0.) && (e0 > 0. || e1 > 0. || e2 > 0.) {
-            return None
+            return None;
         }
         let det = e0 + e1 + e2;
         if det == 0. {
-            return None
+            return None;
         }
 
         p0t.z *= sz;
@@ -142,9 +157,9 @@ impl Hitable for Triangle<'_> {
 
         let t_scaled = e0 * p0t.z + e1 * p1t.z + e2 * p2t.z;
         if det < 0. && (t_scaled >= t_min * det || t_scaled < t_max * det) {
-            return None
+            return None;
         } else if det > 0. && (t_scaled <= t_min * det || t_scaled > t_max * det) {
-            return None
+            return None;
         }
 
         let inv_det = 1. / det;
@@ -163,21 +178,35 @@ impl Hitable for Triangle<'_> {
             (p0 - p2).cross(p1 - p2)
         };
 
-        Some(
-            RaycastHit {
-                t,
-                point,
-                normal,
-                material: self.mesh.material,
-                uv,
-            }
-            )
+        Some(RaycastHit {
+            t,
+            point,
+            normal,
+            material: self.mesh.material,
+            uv,
+        })
     }
 
     fn bounding_box(&self) -> Option<AABB> {
         let [p0, p1, p2] = self.mesh.get_triangle_verts(self.index);
-        let aabb = AABB::new(p0, p1).expand_to_point(p2);
-        // Just make the box a little bit bigger in case the face is planar
+
+        let mut aabb = AABB::from_two_points(p0, p1).expand_to_point(p2);
+        let size = (aabb.max - aabb.min).abs();
+
+        // Make sure the box has non-zero volume
+        if size.x < 0.001 {
+            aabb.min.x -= 0.001;
+            aabb.max.x += 0.001;
+        }
+        if size.y < 0.001 {
+            aabb.min.y -= 0.001;
+            aabb.max.y += 0.001;
+        }
+        if size.z < 0.001 {
+            aabb.min.z -= 0.001;
+            aabb.max.z += 0.001;
+        }
+
         Some(aabb)
     }
 }

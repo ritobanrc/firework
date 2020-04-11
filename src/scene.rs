@@ -161,8 +161,9 @@ impl<'a> RenderObject<'a> {
         self.aabb = if let Some(bbox) = self.obj.bounding_box() {
             // First, rotate the bounding box
             // If there is a signficant rotation
-            let cos_trace = { 
-                let trace = self.rotation_mat[0][0] + self.rotation_mat[1][1] + self.rotation_mat[2][2];
+            let cos_trace = {
+                let trace =
+                    self.rotation_mat[0][0] + self.rotation_mat[1][1] + self.rotation_mat[2][2];
                 0.5 * (trace - 1.) // .acos()
             };
             let rotated_aabb = if cos_trace < 0.999 {
@@ -197,7 +198,7 @@ impl<'a> RenderObject<'a> {
 
 impl Hitable for RenderObject<'_> {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
-        let cos_trace = { 
+        let cos_trace = {
             let trace = self.rotation_mat[0][0] + self.rotation_mat[1][1] + self.rotation_mat[2][2];
             0.5 * (trace - 1.) // .acos()
         };

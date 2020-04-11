@@ -26,7 +26,7 @@ impl<'a> BVHNode<'a> {
         // TODO: Figure out why bounding_box returns an option
         // TODO: Replace all the `expect`s with proper error handling
 
-        indicies.sort_unstable_by(|a, b| {
+        indicies.sort_by(|a, b| {
             let a_box = scene
                 .get_object(*a)
                 .bounding_box()
@@ -35,8 +35,8 @@ impl<'a> BVHNode<'a> {
                 .get_object(*b)
                 .bounding_box()
                 .expect("Bounding Box not found in BVH constructor");
-            a_box.min[depth % 3]
-                .partial_cmp(&b_box.min[depth % 3])
+            a_box.center()[depth % 3]
+                .partial_cmp(&b_box.center()[depth % 3])
                 .expect("Float comparison failed in BVH constructor")
         });
 
@@ -46,6 +46,7 @@ impl<'a> BVHNode<'a> {
                     .get_object(a)
                     .bounding_box()
                     .expect("Bounding Box not found in BVH constructor");
+                //println!("[Leaf] --  BBOX: {:?}", aabb);
                 BVHNode {
                     next: BVHNodeVariant::Leaf(&scene.get_object(a)),
                     aabb,
@@ -60,6 +61,7 @@ impl<'a> BVHNode<'a> {
                     .get_object(b)
                     .bounding_box()
                     .expect("Bounding Box not found in BVH constructor");
+                //println!("[DoubleLeaf] --  LEFT BBOX: {:?} -- RIGHT BBOX: {:?}", a_box, b_box);
                 BVHNode {
                     next: BVHNodeVariant::DoubleLeaf(scene.get_object(a), scene.get_object(b)),
                     aabb: a_box.expand(&b_box),
@@ -78,6 +80,7 @@ impl<'a> BVHNode<'a> {
                     .expect("Bounding Box not found in BVH constructor");
 
                 let aabb = left_box.expand(&right_box);
+                //println!("[Branch] --  LEFT BBOX: {:?} -- RIGHT BBOX: {:?} -- TOTAL BBOX: {:?}", left_box, right_box, aabb);
                 BVHNode {
                     next: BVHNodeVariant::Branch(Box::new(left), Box::new(right)),
                     aabb,
