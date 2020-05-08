@@ -13,7 +13,7 @@ pub fn sphere_uv(point: &Vec3) -> Vec2 {
     let theta = point.y.asin();
     let u = 1. - (phi + PI) / (2. * PI);
     let v = (theta + PI / 2.) / PI;
-    (u, v)
+    Vec2::new(u, v)
 }
 
 // TODO: Properly create an `environment` module in firework that handles all this
@@ -37,8 +37,8 @@ pub fn hdri_test() -> Scene<'static> {
     scene.set_environment(move |dir| {
         let uv = sphere_uv(&dir);
 
-        let x = (uv.0 * hdri_width) as usize;
-        let y = ((1. - uv.1) * hdri_height) as usize;
+        let x = (uv.x * hdri_width) as usize;
+        let y = ((1. - uv.y) * hdri_height) as usize;
 
         let idx = (y as f32 * hdri_width) as usize + x;
 

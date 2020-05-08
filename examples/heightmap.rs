@@ -1,11 +1,10 @@
 use firework::camera::CameraSettings;
 use firework::material::{EmissiveMat, LambertianMat};
+use firework::objects::TriangleMesh;
 use firework::objects::YZRect;
-use firework::objects::{Triangle, TriangleMesh};
 use firework::render::Renderer;
 use firework::scene::{RenderObject, Scene};
 use firework::window::RenderWindow;
-use std::sync::Arc;
 use ultraviolet::{Rotor3, Vec3};
 
 /// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
@@ -65,12 +64,7 @@ fn heighmap_scene() -> Scene<'static> {
         }
     }
 
-    let mesh = TriangleMesh::new(verts, indicies, None, None, green).unwrap();
-    let mesh = Arc::new(mesh);
-
-    for tri in 0..mesh.num_tris() {
-        scene.add_object(RenderObject::new(Triangle::new(Arc::clone(&mesh), tri)));
-    }
+    scene.add_mesh(TriangleMesh::new(verts, indicies, None, None, green).unwrap());
 
     scene
 }
@@ -85,7 +79,7 @@ fn main() {
     let renderer = Renderer::default()
         .width(960)
         .height(540)
-        .samples(128)
+        .samples(32)
         .use_bvh(true)
         .camera(camera);
 

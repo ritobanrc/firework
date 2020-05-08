@@ -1,12 +1,12 @@
 use firework::camera::CameraSettings;
-use firework::material::LambertianMat;
-use firework::objects::Sphere;
+use firework::material::{EmissiveMat, LambertianMat};
+use firework::objects::{Sphere, XZRect, YZRect};
 use firework::render::Renderer;
 use firework::scene::{RenderObject, Scene};
 use firework::texture::ImageTexture;
 use firework::window::RenderWindow;
 use image::open;
-use ultraviolet::Vec3;
+use ultraviolet::{Rotor3, Vec3};
 
 /// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
 /// TODO: Don't have hardcoded SKY_BLUE and SKY_WHITE colors.
@@ -31,7 +31,27 @@ pub fn earth_scene() -> Scene<'static> {
     let mut scene = Scene::new();
     let image = open("./earthmap.jpg").unwrap();
     let earth_mat = scene.add_material(LambertianMat::new(ImageTexture::new(image)));
-    scene.add_object(RenderObject::new(Sphere::new(2., earth_mat)));
+
+    let uvmap = open("uvmap.png").unwrap();
+    let uv_image_mat = scene.add_material(LambertianMat::new(ImageTexture::new(uvmap)));
+
+    scene.add_object(RenderObject::new(Sphere::new(0.25, earth_mat)));
+
+    scene.add_object(RenderObject::new(Sphere::new(0.25, uv_image_mat)).position(1., 0., 0.));
+    scene.add_object(RenderObject::new(Sphere::new(0.25, earth_mat)).position(0., 1., 0.));
+    scene.add_object(RenderObject::new(Sphere::new(0.25, earth_mat)).position(0., 0., 1.));
+
+    let grey = scene.add_material(LambertianMat::with_color(Vec3::broadcast(0.5)));
+    scene.add_object(RenderObject::new(XZRect::new(
+        -100., 100., -100., 100., 0., grey,
+    )));
+
+    let light = scene.add_material(EmissiveMat::with_color(Vec3::broadcast(8.)));
+    scene.add_object(
+        RenderObject::new(YZRect::new(0., 20., 0., 10., -3., light))
+            .rotate(Rotor3::from_rotation_xz(-30.))
+            .position(0., 0., -10.),
+    );
 
     scene.set_environment(sky_color);
     scene
@@ -41,13 +61,13 @@ fn main() {
     let scene = earth_scene();
 
     let camera = CameraSettings::default()
-        .cam_pos(Vec3::new(0., 0., -10.))
+        .cam_pos(Vec3::new(5., 5., 5.))
         .look_at(Vec3::zero())
         .field_of_view(30.);
     let renderer = Renderer::default()
-        .width(300)
-        .height(300)
-        .samples(32)
+        .width(800)
+        .height(800)
+        .samples(128)
         .camera(camera);
 
     let render = renderer.render(&scene);

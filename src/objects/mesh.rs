@@ -46,6 +46,13 @@ impl TriangleMesh {
         })
     }
 
+    pub fn translate(mut self, pos: Vec3) -> Self {
+        for vert in &mut self.verts {
+            *vert += pos;
+        }
+        self
+    }
+
     /// Returns the verticies for a given triangle
     pub fn get_triangle_verts(&self, idx: TriangleIdx) -> [Vec3; 3] {
         let base_idx = 3 * idx;

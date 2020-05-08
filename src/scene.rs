@@ -1,5 +1,6 @@
 use crate::aabb::AABB;
 use crate::material::Material;
+use crate::objects::{Triangle, TriangleMesh};
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use tiny_rng::LcRng;
@@ -36,6 +37,14 @@ impl<'a> Scene<'a> {
     pub fn add_object(&mut self, obj: RenderObject<'a>) -> RenderObjectIdx {
         self.render_objects.push(obj);
         self.render_objects.len() - 1
+    }
+
+    pub fn add_mesh(&mut self, mesh: TriangleMesh) {
+        use std::sync::Arc;
+        let mesh = Arc::new(mesh);
+        for tri in 0..mesh.num_tris() {
+            self.add_object(RenderObject::new(Triangle::new(Arc::clone(&mesh), tri)));
+        }
     }
 
     /// Returns a reference to the `RenderObject` stored at the given `RenderObjectIdx`

@@ -63,4 +63,12 @@ impl AABB {
 
         AABB { min, max }
     }
+
+    /// Pads the bounding box by `delta` in all directions
+    pub fn pad(&self, delta: f32) -> Self {
+        AABB::new(
+            self.min - Vec3::broadcast(delta),
+            self.max + Vec3::broadcast(delta),
+        )
+    }
 }

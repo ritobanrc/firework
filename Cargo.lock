@@ -146,6 +146,7 @@ dependencies = [
  "minifb 0.15.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-rng 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tobj 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ultraviolet 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -707,6 +708,11 @@ version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "tobj"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "ultraviolet"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -913,6 +919,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum tiff 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d7b7c2cfc4742bd8a32f2e614339dd8ce30dbcf676bb262bd63a2327bc5df57d"
 "checksum time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)" = "db8dcfca086c1143c9270ac42a2bbd8a7ee477b78ac8e45b19abfb0cbede4b6f"
 "checksum tiny-rng 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "be3e4d4ea10b99b42f21ade78eece338f390483b461a63f9ee080576df6e9a68"
+"checksum tobj 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2b9d0bafde95a2f8f50dd3c10bc127b462efa8c3c0b60dfa276b7e032100e21d"
 "checksum ultraviolet 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)" = "ae513d44058e41a4669dc336b13a017ea96ad6984bac3797a3d49744e3ffa0ba"
 "checksum unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "fc72304796d0818e357ead4e000d19c9c174ab23dc11093ac919054d20a6a7fc"
 "checksum unicode-xid 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
