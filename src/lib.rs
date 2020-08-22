@@ -4,9 +4,6 @@
 #![feature(const_generics)]
 #![allow(incomplete_features)]
 
-#[macro_use]
-extern crate itertools;
-
 mod aabb;
 mod bvh;
 mod ray;

@@ -4,6 +4,7 @@ use crate::material::Material;
 use crate::objects::{Triangle, TriangleMesh};
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
+use itertools::iproduct;
 use tiny_rng::LcRng;
 use ultraviolet::{Mat3, Rotor3, Vec3};
 

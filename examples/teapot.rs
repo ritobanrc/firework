@@ -77,7 +77,7 @@ fn teapot_scene() -> Scene {
 fn main() {
     let scene = teapot_scene();
     let camera = CameraSettings::default()
-        .cam_pos(Vec3::new(0., 10., 50.))
+        .cam_pos(Vec3::new(0., 30., 50.))
         //.look_at(Vec3::new(0., 0., 0.))
         .look_at(Vec3::new(0., 0., 0.))
         .field_of_view(40.);
