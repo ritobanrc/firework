@@ -14,8 +14,8 @@ pub type RenderObjectIdx = usize;
 
 /// Represents a Scene
 pub struct Scene<'a> {
-    pub(crate) render_objects: Vec<RenderObject<'a>>,
-    pub(crate) materials: Vec<Box<dyn Material + Sync + 'a>>, // TODO: Remove the layer of indirection here
+    pub(crate) render_objects: Vec<RenderObject>,
+    pub(crate) materials: Vec<Box<dyn Material + Sync + 'static>>, // TODO: Remove the layer of indirection here
     pub(crate) environment: Box<dyn Fn(Vec3) -> Vec3 + Sync + 'a>,
 }
 
@@ -34,7 +34,7 @@ impl<'a> Scene<'a> {
     }
 
     /// Adds a material to the `Scene` and returns it's `MaterialIdx`
-    pub fn add_object(&mut self, obj: RenderObject<'a>) -> RenderObjectIdx {
+    pub fn add_object(&mut self, obj: RenderObject) -> RenderObjectIdx {
         self.render_objects.push(obj);
         self.render_objects.len() - 1
     }
@@ -60,7 +60,7 @@ impl<'a> Scene<'a> {
     /// let mut scene = Scene::new();
     /// let red = scene.add_material(LambertianMat::with_color(Vec3::new(1., 0., 0.)));
     /// ```
-    pub fn add_material<T: Material + Sync + 'a>(&mut self, mat: T) -> MaterialIdx {
+    pub fn add_material<T: Material + Sync + 'static>(&mut self, mat: T) -> MaterialIdx {
         self.materials.push(Box::new(mat));
         self.materials.len() - 1
     }
@@ -108,8 +108,8 @@ impl Hitable for Scene<'_> {
 
 /// A struct representing an object that can be rendered. Contains the base `Hitable` as well as
 /// any transformations on it.
-pub struct RenderObject<'a> {
-    obj: Box<dyn Hitable + Sync + 'a>,
+pub struct RenderObject {
+    obj: Box<dyn Hitable + Sync + 'static>,
     position: Vec3,
     //rotation: Rotor3,
     rotation_mat: Mat3,
@@ -118,9 +118,9 @@ pub struct RenderObject<'a> {
     aabb: Option<AABB>,
 }
 
-impl<'a> RenderObject<'a> {
+impl RenderObject {
     /// Creates a new RenderObject
-    pub fn new<T: Hitable + Sync + 'a>(obj: T) -> RenderObject<'a> {
+    pub fn new<T: Hitable + Sync + 'static>(obj: T) -> Self {
         let aabb = obj.bounding_box();
         RenderObject {
             obj: Box::new(obj),
@@ -135,7 +135,7 @@ impl<'a> RenderObject<'a> {
 
     /// Sets the position of the `RenderObject`
     #[inline(always)]
-    pub fn position(mut self, x: f32, y: f32, z: f32) -> RenderObject<'a> {
+    pub fn position(mut self, x: f32, y: f32, z: f32) -> Self {
         self.position = Vec3::new(x, y, z);
         self.update_bounding_box();
         self
@@ -143,7 +143,7 @@ impl<'a> RenderObject<'a> {
 
     /// Sets the position of the `RenderObject`
     #[inline(always)]
-    pub fn position_vec(mut self, pos: Vec3) -> RenderObject<'a> {
+    pub fn position_vec(mut self, pos: Vec3) -> Self {
         self.position = pos;
         self.update_bounding_box();
         self
@@ -151,7 +151,7 @@ impl<'a> RenderObject<'a> {
 
     /// Sets the rotation of the `RenderObject` on the Y Axis
     #[inline(always)]
-    pub fn rotate(mut self, rotor: Rotor3) -> RenderObject<'a> {
+    pub fn rotate(mut self, rotor: Rotor3) -> Self {
         //self.rotation = rotor;
         self.rotation_mat = rotor.into_matrix();
         self.inv_rotation_mat = rotor.reversed().into_matrix();
@@ -161,7 +161,7 @@ impl<'a> RenderObject<'a> {
 
     /// Sets the `flip_normals` value to the opposite of what it was previously
     #[inline(always)]
-    pub fn flip_normals(mut self) -> RenderObject<'a> {
+    pub fn flip_normals(mut self) -> Self {
         self.flip_normals = !self.flip_normals;
         self
     }
@@ -205,7 +205,7 @@ impl<'a> RenderObject<'a> {
     }
 }
 
-impl Hitable for RenderObject<'_> {
+impl Hitable for RenderObject {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
         let cos_trace = {
             let trace = self.rotation_mat[0][0] + self.rotation_mat[1][1] + self.rotation_mat[2][2];

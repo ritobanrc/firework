@@ -10,8 +10,8 @@ pub struct BVHNode<'a> {
 }
 
 enum BVHNodeVariant<'a> {
-    Leaf(&'a RenderObject<'a>),
-    DoubleLeaf(&'a RenderObject<'a>, &'a RenderObject<'a>),
+    Leaf(&'a RenderObject),
+    DoubleLeaf(&'a RenderObject, &'a RenderObject),
     Branch(Box<BVHNode<'a>>, Box<BVHNode<'a>>),
 }
 

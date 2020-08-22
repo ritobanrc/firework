@@ -118,7 +118,7 @@ pub fn max_component_idx(vec: Vec3) -> usize {
     }
 }
 
-pub fn lerp<T>(a: T, b: T, t: f32) -> T
+pub fn _lerp<T>(a: T, b: T, t: f32) -> T
 where
     T: Add<T, Output = T>,
     T: Mul<f32, Output = T>,
@@ -137,7 +137,7 @@ pub struct CoordinateSystem {
 
 impl CoordinateSystem {
     /// Creates a new `CoordinateSystem` from 3 vectors. Does not check for linear independence.
-    pub fn new(v1: Vec3, v2: Vec3, v3: Vec3) -> CoordinateSystem {
+    pub fn _new(v1: Vec3, v2: Vec3, v3: Vec3) -> CoordinateSystem {
         CoordinateSystem { v1, v2, v3 }
     }
 
@@ -147,7 +147,7 @@ impl CoordinateSystem {
     /// `v1` should be normalized before calling this function.
     /// Note that these values are unique only up to rotation around the vector `v1`.
     /// See The PBR Book Section 2.2.4 for more details.
-    pub fn from_one_vec(v1: &Vec3) -> CoordinateSystem {
+    pub fn _from_one_vec(v1: &Vec3) -> CoordinateSystem {
         let v2 = if v1.x.abs() > v1.y.abs() {
             Vec3::new(-v1.z, 0., v1.x).normalized()
         } else {
