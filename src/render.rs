@@ -22,7 +22,7 @@ pub fn color(r: &Ray, scene: &Scene, root: &impl Hitable, depth: usize, rand: &m
             emit
         }
     } else {
-        (scene.environment)(r.direction().normalized())
+        scene.environment.sample(r.direction().normalized())
     }
 }
 

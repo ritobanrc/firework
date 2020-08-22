@@ -1,4 +1,3 @@
-use firework::camera::CameraSettings;
 use firework::material::{DielectricMat, LambertianMat, MetalMat};
 use firework::objects::{Sphere, XZRect};
 use firework::render::Renderer;
@@ -18,7 +17,7 @@ pub fn sphere_uv(point: &Vec3) -> Vec2 {
 
 // TODO: Properly create an `environment` module in firework that handles all this
 // NOTE: Currently, there isn't importance sampling, so even with insane numbers of samples, it's impossible to get accurate HDR lighting that isn't noisy.
-pub fn hdri_test() -> Scene<'static> {
+pub fn hdri_test() -> Scene {
     use image::hdr::HDRDecoder;
     use std::fs::File;
     use std::io::BufReader;

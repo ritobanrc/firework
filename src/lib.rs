@@ -13,6 +13,7 @@ mod ray;
 mod util;
 
 pub mod camera;
+pub mod environment;
 pub mod material;
 pub mod objects;
 pub mod render;

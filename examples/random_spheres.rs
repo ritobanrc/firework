@@ -1,4 +1,5 @@
 use firework::camera::CameraSettings;
+use firework::environment::SkyEnv;
 use firework::material::{DielectricMat, LambertianMat, MetalMat};
 use firework::objects::Sphere;
 use firework::render::Renderer;
@@ -8,24 +9,6 @@ use firework::window::RenderWindow;
 use std::time;
 use tiny_rng::{Rand, Rng};
 use ultraviolet::Vec3;
-
-/// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
-/// TODO: Don't have hardcoded SKY_BLUE and SKY_WHITE colors.
-fn sky_color(dir: Vec3) -> Vec3 {
-    const SKY_BLUE: Vec3 = Vec3 {
-        x: 0.5,
-        y: 0.7,
-        z: 1.0,
-    };
-    const SKY_WHITE: Vec3 = Vec3 {
-        x: 1.,
-        y: 1.,
-        z: 1.,
-    };
-    // Take the y (from -1 to +1) and map it to 0..1
-    let t = 0.5 * (dir.y + 1.0);
-    (1. - t) * SKY_WHITE + t * SKY_BLUE
-}
 
 /// The famous scence on the cover of the "Raytracing in a Weekend Book"
 pub fn random_scene(rand: &mut impl Rand) -> Scene {
@@ -78,7 +61,7 @@ pub fn random_scene(rand: &mut impl Rand) -> Scene {
     scene.add_object(RenderObject::new(Sphere::new(1.0, diffuse)).position(-4., 1., 0.));
     scene.add_object(RenderObject::new(Sphere::new(1.0, metal)).position(4., 1., 0.));
 
-    scene.set_environment(sky_color);
+    scene.set_environment(SkyEnv::default());
 
     scene
 }

@@ -64,12 +64,6 @@ where
         .iter()
         .flat_map(|&x| std::array::IntoIter::new([x.0, x.1, x.2]))
         .collect();
-    save_buffer(
-        path,
-        &new_buf,
-        width as u32,
-        height as u32,
-        ColorType::RGB(8),
-    )
-    .expect("Failed to save");
+    save_buffer(path, &new_buf, width as u32, height as u32, ColorType::Rgb8)
+        .expect("Failed to save");
 }

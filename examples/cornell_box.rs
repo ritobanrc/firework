@@ -7,7 +7,7 @@ use firework::window::RenderWindow;
 use std::time;
 use ultraviolet::{Rotor3, Vec3};
 
-pub fn cornell_box() -> Scene<'static> {
+pub fn cornell_box() -> Scene {
     //let cam_pos = Vec3::new(278., 278., -800.);
     //let look_at = Vec3::new(278., 278., 0.);
     //let camera = Camera::new(cam_pos, look_at, Vec3::unit_y(), 40.0, 0.0, 10.);

@@ -1,4 +1,5 @@
 use crate::aabb::AABB;
+use crate::environment::{ColorEnv, Environment};
 use crate::material::Material;
 use crate::objects::{Triangle, TriangleMesh};
 use crate::ray::Ray;
@@ -13,23 +14,23 @@ pub type MaterialIdx = usize;
 pub type RenderObjectIdx = usize;
 
 /// Represents a Scene
-pub struct Scene<'a> {
+pub struct Scene {
     pub(crate) render_objects: Vec<RenderObject>,
     pub(crate) materials: Vec<Box<dyn Material + Sync + 'static>>, // TODO: Remove the layer of indirection here
-    pub(crate) environment: Box<dyn Fn(Vec3) -> Vec3 + Sync + 'a>,
+    pub(crate) environment: Box<dyn Environment + Sync + 'static>,
 }
 
-impl<'a> Scene<'a> {
+impl Scene {
     /// Creates an empty scene, with the given camera.
     /// ```
     /// use firework::Scene;
     /// let mut scene = Scene::new();
     /// ```
-    pub fn new() -> Scene<'a> {
+    pub fn new() -> Self {
         Scene {
             render_objects: Vec::new(),
             materials: Vec::new(),
-            environment: Box::new(|_: Vec3| Vec3::zero()),
+            environment: Box::new(ColorEnv::default()),
         }
     }
 
@@ -71,12 +72,12 @@ impl<'a> Scene<'a> {
     }
 
     /// Sets the closure for the "environment"
-    pub fn set_environment<F: Fn(Vec3) -> Vec3 + Sync + 'a>(&mut self, func: F) {
-        self.environment = Box::new(func);
+    pub fn set_environment(&mut self, env: impl Environment + Sync + 'static) {
+        self.environment = Box::new(env);
     }
 }
 
-impl Hitable for Scene<'_> {
+impl Hitable for Scene {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
         let mut last_hit = None;
         let mut closest = t_max;

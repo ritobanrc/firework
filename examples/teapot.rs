@@ -1,4 +1,5 @@
 use firework::camera::CameraSettings;
+use firework::environment::SkyEnv;
 use firework::material::LambertianMat;
 use firework::objects::TriangleMesh;
 use firework::render::Renderer;
@@ -8,25 +9,6 @@ use std::convert::AsRef;
 use std::fmt;
 use std::path::Path;
 use ultraviolet::Vec3;
-
-/// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
-/// TODO: Don't have hardcoded SKY_BLUE and SKY_WHITE colors.
-fn sky_color(dir: Vec3) -> Vec3 {
-    const SKY_BLUE: Vec3 = Vec3 {
-        x: 0.5,
-        y: 0.7,
-        z: 1.0,
-    };
-    const SKY_WHITE: Vec3 = Vec3 {
-        x: 1.,
-        y: 1.,
-        z: 1.,
-    };
-
-    // Take the y (from -1 to +1) and map it to 0..1
-    let t = 0.5 * (dir.y + 1.0);
-    (1. - t) * SKY_WHITE + t * SKY_BLUE
-}
 
 pub fn add_obj<P>(scene: &mut Scene, file_name: P, material: MaterialIdx)
 where
@@ -82,12 +64,12 @@ where
     }
 }
 
-fn teapot_scene() -> Scene<'static> {
+fn teapot_scene() -> Scene {
     let mut scene = Scene::new();
 
     let diffuse = scene.add_material(LambertianMat::with_color(Vec3::broadcast(0.8)));
     add_obj(&mut scene, "teapot.obj", diffuse);
-    scene.set_environment(sky_color);
+    scene.set_environment(SkyEnv::default());
 
     scene
 }
