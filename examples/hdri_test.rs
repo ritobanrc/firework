@@ -1,3 +1,4 @@
+use firework::camera::CameraSettings;
 use firework::material::{DielectricMat, LambertianMat, MetalMat};
 use firework::objects::{Sphere, XZRect};
 use firework::render::Renderer;

@@ -2,6 +2,7 @@ use crate::aabb::AABB;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::scene::MaterialIdx;
+use crate::serde_compat::Vec2Def;
 use crate::util::Axis;
 use tiny_rng::LcRng;
 use ultraviolet::Vec2;
@@ -10,8 +11,11 @@ pub type XYRect = AARect<{ Axis::X }, { Axis::Y }>;
 pub type YZRect = AARect<{ Axis::Y }, { Axis::Z }>;
 pub type XZRect = AARect<{ Axis::X }, { Axis::Z }>;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct AARect<const A1: Axis, const A2: Axis> {
+    #[serde(with = "Vec2Def")]
     min: Vec2,
+    #[serde(with = "Vec2Def")]
     max: Vec2,
     k: f32,
     flip_normal: bool, // TODO: Shift this responsibility into the RenderObject
@@ -84,6 +88,7 @@ impl<const A1: Axis, const A2: Axis> Hitable for AARect<{ A1 }, { A2 }> {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub(crate) enum Rect {
     XY(XYRect),
     XZ(XZRect),

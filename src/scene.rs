@@ -4,7 +4,9 @@ use crate::material::Material;
 use crate::objects::{Triangle, TriangleMesh};
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
+use crate::serde_compat::SerializedRenderObject;
 use itertools::iproduct;
+use serde::{Deserialize, Serialize};
 use tiny_rng::LcRng;
 use ultraviolet::{Mat3, Rotor3, Vec3};
 
@@ -15,6 +17,7 @@ pub type MaterialIdx = usize;
 pub type RenderObjectIdx = usize;
 
 /// Represents a Scene
+//#[derive(Serialize, Deserialize)]
 pub struct Scene {
     pub(crate) render_objects: Vec<RenderObject>,
     pub(crate) materials: Vec<Box<dyn Material + Sync + 'static>>, // TODO: Remove the layer of indirection here
@@ -110,14 +113,16 @@ impl Hitable for Scene {
 
 /// A struct representing an object that can be rendered. Contains the base `Hitable` as well as
 /// any transformations on it.
+#[derive(Deserialize)]
+#[serde(from = "SerializedRenderObject")]
 pub struct RenderObject {
-    obj: Box<dyn Hitable + Sync + 'static>,
-    position: Vec3,
-    //rotation: Rotor3,
-    rotation_mat: Mat3,
-    inv_rotation_mat: Mat3,
-    flip_normals: bool,
-    aabb: Option<AABB>,
+    pub(crate) obj: Box<dyn Hitable + 'static>,
+    pub(crate) position: Vec3,
+    //pub(crate) //rotation: Rotor3,
+    pub(crate) rotation_mat: Mat3,
+    pub(crate) inv_rotation_mat: Mat3,
+    pub(crate) flip_normals: bool,
+    pub(crate) aabb: Option<AABB>,
 }
 
 impl RenderObject {
@@ -168,7 +173,7 @@ impl RenderObject {
         self
     }
 
-    fn update_bounding_box(&mut self) {
+    pub(crate) fn update_bounding_box(&mut self) {
         self.aabb = if let Some(bbox) = self.obj.bounding_box() {
             // First, rotate the bounding box
             // If there is a signficant rotation

@@ -14,6 +14,9 @@ image = "0.23"
 rayon = "1.3"
 itertools = "0.9"
 tobj = "1.0"
+typetag = "0.1"
+serde = "1.0"
+serde_yaml = "0.8"
 
 [profile.release]
 lto = true

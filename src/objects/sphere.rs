@@ -3,10 +3,11 @@ use crate::objects::solve_quadratic;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::scene::MaterialIdx;
+use serde::{Deserialize, Serialize};
 use tiny_rng::LcRng;
 use ultraviolet::{Vec2, Vec3};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Sphere {
     radius: f32,
     material: MaterialIdx,

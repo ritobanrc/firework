@@ -6,8 +6,11 @@ use crate::scene::MaterialIdx;
 use tiny_rng::LcRng;
 use ultraviolet::Vec3;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Rect3d {
+    #[serde(with = "crate::serde_compat::Vec3Def")]
     pos: Vec3,
+    #[serde(with = "crate::serde_compat::Vec3Def")]
     size: Vec3,
     faces: Vec<Rect>,
 }

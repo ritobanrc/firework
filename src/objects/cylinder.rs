@@ -7,6 +7,7 @@ use tiny_rng::LcRng;
 use ultraviolet::{Vec2, Vec3};
 
 /// A vertically oriented cylinder, with a given radius and height
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cylinder {
     radius: f32,
     height: f32,

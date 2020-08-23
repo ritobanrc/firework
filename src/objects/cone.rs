@@ -6,6 +6,7 @@ use crate::scene::MaterialIdx;
 use tiny_rng::LcRng;
 use ultraviolet::{Vec2, Vec3};
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cone {
     radius: f32,
     height: f32,

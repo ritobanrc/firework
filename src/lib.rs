@@ -7,6 +7,7 @@
 mod aabb;
 mod bvh;
 mod ray;
+mod serde_compat;
 mod util;
 
 pub mod camera;
