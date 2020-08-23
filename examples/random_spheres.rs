@@ -78,8 +78,8 @@ fn main() {
         .aperture(0.1);
 
     let renderer = Renderer::default()
-        .width(400)
-        .height(200)
+        .width(960)
+        .height(540)
         .samples(32)
         .use_bvh(true)
         .camera(camera);

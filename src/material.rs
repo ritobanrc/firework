@@ -2,9 +2,11 @@ use crate::ray::Ray;
 use crate::render::RaycastHit;
 use crate::texture::{ConstantTexture, Texture};
 use crate::util::{random_in_unit_sphere, reflect, refract, schlick};
+use serde::{Deserialize, Serialize};
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Vec2, Vec3};
 
+//#[typetag::serde(tag = "material")]
 pub trait Material {
     fn scatter(&self, r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult>;
 

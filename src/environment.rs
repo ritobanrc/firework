@@ -1,12 +1,16 @@
+use crate::serde_compat::Vec3Def;
+use serde::{Deserialize, Serialize};
 use ultraviolet::Vec3;
 
 /// A trait for the world environment
+#[typetag::serde(tag = "environment")]
 pub trait Environment {
     fn sample(&self, dir: Vec3) -> Vec3;
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct ColorEnv {
+    #[serde(with = "Vec3Def")]
     color: Vec3,
 }
 
@@ -16,15 +20,18 @@ impl ColorEnv {
     }
 }
 
+#[typetag::serde]
 impl Environment for ColorEnv {
     fn sample(&self, _dir: Vec3) -> Vec3 {
         self.color
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SkyEnv {
+    #[serde(with = "Vec3Def")]
     zenith_color: Vec3,
+    #[serde(with = "Vec3Def")]
     horizon_color: Vec3,
 }
 
@@ -54,6 +61,7 @@ impl Default for SkyEnv {
     }
 }
 
+#[typetag::serde]
 impl Environment for SkyEnv {
     fn sample(&self, dir: Vec3) -> Vec3 {
         // Take the y (from -1 to +1) and map it to 0..1

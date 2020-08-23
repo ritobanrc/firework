@@ -26,9 +26,8 @@ impl From<Vec3> for Color {
 pub struct Coord(pub usize, pub usize);
 
 impl Coord {
-    /// Using the global `const`s WIDTH and HEIGHT, convert an index (x + (HEIGHT - y) * WIDTH) back an (x, y)
     /// `Coord`. Note that this function assumes that as the index increases, the y values decrease
-    /// (i.e. `idx = 0` is at the bottom left at (0, HEIGHT))
+    /// (i.e. `idx = 0` is at the bottom left at (0, height))
     pub fn from_index(idx: usize, width: usize, height: usize) -> Coord {
         Coord(idx % width, height - (idx / width))
     }

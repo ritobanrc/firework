@@ -1,4 +1,6 @@
 use image::{GenericImageView, Pixel, Rgba};
+use serde::{Deserialize, Deserializer};
+use std::path::{Path, PathBuf};
 use ultraviolet::{Vec2, Vec3};
 
 pub trait Texture {
@@ -228,23 +230,27 @@ impl Texture for MarbleTexture {
     }
 }
 
-pub struct ImageTexture<T> {
-    image: T,
+#[derive(Deserialize)]
+pub struct ImageTexture {
+    #[serde(deserialize_with = "ImageTexture::deserializer")]
+    image: image::DynamicImage,
 }
 
-impl<'a, T> ImageTexture<T>
-where
-    T: GenericImageView,
-{
-    pub fn new(image: T) -> ImageTexture<T> {
+impl ImageTexture {
+    pub fn new(image: image::DynamicImage) -> ImageTexture {
         ImageTexture { image }
+    }
+
+    fn deserializer<'de, D>(de: D) -> Result<image::DynamicImage, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let path = PathBuf::deserialize(de)?;
+        Ok(image::open(path).map_err(|e| serde::de::Error::custom(e))?)
     }
 }
 
-impl<T> Texture for ImageTexture<T>
-where
-    T: GenericImageView<Pixel = Rgba<u8>>,
-{
+impl Texture for ImageTexture {
     fn sample(&self, uv: Vec2, _point: &Vec3) -> Vec3 {
         let (w, h) = self.image.dimensions();
         let i = uv.x * self.image.dimensions().0 as f32;
