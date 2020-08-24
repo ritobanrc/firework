@@ -18,6 +18,7 @@ impl From<SerializedRenderObject> for RenderObject {
         let mut obj = RenderObject {
             obj: s.obj.to_hitable(),
             position: s.position,
+            rotation: s.rotation,
             rotation_mat: s.rotation.into_matrix(),
             inv_rotation_mat: s.rotation.reversed().into_matrix(),
             flip_normals: s.flip_normals,
@@ -27,6 +28,17 @@ impl From<SerializedRenderObject> for RenderObject {
         obj
     }
 }
+
+//impl From<RenderObject> for SerializedRenderObject {
+//fn from(r: RenderObject) -> Self {
+//SerializedRenderObject {
+//obj: r.obj,
+//position: r.position,
+//rotation: r.rotation,
+//flip_normals: r.flip_normals,
+//}
+//}
+//}
 
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "Vec3")]

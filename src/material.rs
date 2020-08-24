@@ -1,12 +1,13 @@
 use crate::ray::Ray;
 use crate::render::RaycastHit;
+use crate::serde_compat::Vec3Def;
 use crate::texture::{ConstantTexture, Texture};
 use crate::util::{random_in_unit_sphere, reflect, refract, schlick};
 use serde::{Deserialize, Serialize};
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Vec2, Vec3};
 
-//#[typetag::serde(tag = "material")]
+#[typetag::serde(tag = "material")]
 pub trait Material {
     fn scatter(&self, r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult>;
 
@@ -23,6 +24,7 @@ pub struct ScatterResult {
 /// Represents a diffuse (Lambertian) material.
 /// This is a completely "flat" material, like a piece of paper, because light is equally likely
 /// to be scattered in all directions.
+#[derive(Serialize, Deserialize)]
 pub struct LambertianMat {
     albedo: Box<dyn Texture + Sync>,
 }
@@ -59,6 +61,7 @@ impl LambertianMat {
     }
 }
 
+#[typetag::serde]
 impl Material for LambertianMat {
     fn scatter(&self, _r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult> {
         let target = hit.point + hit.normal + random_in_unit_sphere(rand);
@@ -72,7 +75,9 @@ impl Material for LambertianMat {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct MetalMat {
+    #[serde(with = "Vec3Def")]
     albedo: Vec3,
     roughness: f32,
 }
@@ -83,6 +88,7 @@ impl MetalMat {
     }
 }
 
+#[typetag::serde]
 impl Material for MetalMat {
     fn scatter(&self, r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult> {
         let reflected = reflect(r_in.direction(), &hit.normal);
@@ -102,6 +108,7 @@ impl Material for MetalMat {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct DielectricMat {
     ref_idx: f32,
 }
@@ -112,6 +119,7 @@ impl DielectricMat {
     }
 }
 
+#[typetag::serde]
 impl Material for DielectricMat {
     fn scatter(&self, r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult> {
         let reflected = reflect(r_in.direction(), &hit.normal);
@@ -144,6 +152,7 @@ impl Material for DielectricMat {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct EmissiveMat {
     albedo: Box<dyn Texture + Sync>,
 }
@@ -162,6 +171,7 @@ impl EmissiveMat {
     }
 }
 
+#[typetag::serde]
 impl Material for EmissiveMat {
     fn scatter(&self, _r_in: &Ray, _hit: &RaycastHit, _rand: &mut LcRng) -> Option<ScatterResult> {
         None
@@ -172,6 +182,7 @@ impl Material for EmissiveMat {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct IsotropicMat {
     texture: Box<dyn Texture + Sync>,
 }
@@ -182,6 +193,7 @@ impl IsotropicMat {
     }
 }
 
+#[typetag::serde]
 impl Material for IsotropicMat {
     fn scatter(&self, _r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult> {
         Some(ScatterResult {

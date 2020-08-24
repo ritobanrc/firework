@@ -6,14 +6,14 @@ use firework::render::Renderer;
 use firework::scene::{RenderObject, Scene};
 use firework::texture::ImageTexture;
 use firework::window::RenderWindow;
-use image::open;
 use ultraviolet::{Rotor3, Vec3};
 
 pub fn objects_scene() -> Scene {
     let mut scene = Scene::new();
 
-    let uvmap = open("uvmap.png").unwrap();
-    let uv_image_mat = scene.add_material(LambertianMat::new(ImageTexture::new(uvmap)));
+    let uv_image_mat = scene.add_material(LambertianMat::new(
+        ImageTexture::from_path("uvmap.png").unwrap(),
+    ));
     scene.add_object(RenderObject::new(Cylinder::new(2., 3., uv_image_mat)).position(-4.2, 0., 0.));
 
     let blue = scene.add_material(LambertianMat::with_color(Vec3::new(0., 0.2, 0.4)));

@@ -19,9 +19,9 @@ pub type RenderObjectIdx = usize;
 /// Represents a Scene
 //#[derive(Serialize, Deserialize)]
 pub struct Scene {
-    pub(crate) render_objects: Vec<RenderObject>,
-    pub(crate) materials: Vec<Box<dyn Material + Sync + 'static>>, // TODO: Remove the layer of indirection here
-    pub(crate) environment: Box<dyn Environment + Sync + 'static>,
+    pub render_objects: Vec<RenderObject>,
+    pub materials: Vec<Box<dyn Material + Sync + 'static>>, // TODO: Remove the layer of indirection here
+    pub environment: Box<dyn Environment + Sync + 'static>,
 }
 
 impl Scene {
@@ -118,7 +118,7 @@ impl Hitable for Scene {
 pub struct RenderObject {
     pub(crate) obj: Box<dyn Hitable + 'static>,
     pub(crate) position: Vec3,
-    //pub(crate) //rotation: Rotor3,
+    pub(crate) rotation: Rotor3,
     pub(crate) rotation_mat: Mat3,
     pub(crate) inv_rotation_mat: Mat3,
     pub(crate) flip_normals: bool,
@@ -132,7 +132,7 @@ impl RenderObject {
         RenderObject {
             obj: Box::new(obj),
             position: Vec3::zero(),
-            //rotation: Rotor3::identity(),
+            rotation: Rotor3::identity(),
             rotation_mat: Mat3::identity(),
             inv_rotation_mat: Mat3::identity(),
             flip_normals: false,
@@ -159,7 +159,7 @@ impl RenderObject {
     /// Sets the rotation of the `RenderObject` on the Y Axis
     #[inline(always)]
     pub fn rotate(mut self, rotor: Rotor3) -> Self {
-        //self.rotation = rotor;
+        self.rotation = rotor;
         self.rotation_mat = rotor.into_matrix();
         self.inv_rotation_mat = rotor.reversed().into_matrix();
         self.update_bounding_box();
