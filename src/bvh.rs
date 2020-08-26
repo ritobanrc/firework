@@ -1,7 +1,7 @@
 use crate::aabb::AABB;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
-use crate::scene::{RenderObject, Scene};
+use crate::scene::{RenderObjectInternal, SceneInternal};
 use tiny_rng::LcRng;
 
 pub struct BVHNode<'a> {
@@ -10,19 +10,19 @@ pub struct BVHNode<'a> {
 }
 
 enum BVHNodeVariant<'a> {
-    Leaf(&'a RenderObject),
-    DoubleLeaf(&'a RenderObject, &'a RenderObject),
+    Leaf(&'a RenderObjectInternal),
+    DoubleLeaf(&'a RenderObjectInternal, &'a RenderObjectInternal),
     Branch(Box<BVHNode<'a>>, Box<BVHNode<'a>>),
 }
 
 impl<'a> BVHNode<'a> {
-    pub fn new(scene: &'a Scene) -> BVHNode<'a> {
+    pub(crate) fn new(scene: &'a SceneInternal) -> BVHNode<'a> {
         // TODO: proper error handling
         let mut indicies: Vec<usize> = (0..scene.render_objects.len()).collect();
         BVHNode::new_helper(&scene, &mut indicies, 0)
     }
 
-    fn new_helper(scene: &'a Scene, indicies: &mut [usize], depth: usize) -> Self {
+    fn new_helper(scene: &'a SceneInternal, indicies: &mut [usize], depth: usize) -> Self {
         // TODO: Figure out why bounding_box returns an option
         // TODO: Replace all the `expect`s with proper error handling
 

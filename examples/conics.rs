@@ -74,6 +74,17 @@ pub fn objects_scene() -> Scene {
 fn main() {
     let scene = objects_scene();
 
+    use std::io::Write;
+    let mut file = std::fs::File::create("conics.yml").unwrap();
+    file.write_all(serde_yaml::to_string(&scene).unwrap().as_bytes())
+        .unwrap();
+
+    let mut a = String::new();
+    std::io::stdin().read_line(&mut a).unwrap();
+
+    let file = std::fs::File::open("conics.yml").unwrap();
+    let scene: Scene = serde_yaml::from_reader(file).unwrap();
+
     let camera = CameraSettings::default()
         .cam_pos(Vec3::new(6., 4., -7.))
         .look_at(Vec3::new(0., 1.5, 0.))
@@ -84,7 +95,7 @@ fn main() {
         .samples(128)
         .camera(camera);
 
-    let render = renderer.render(&scene);
+    let render = renderer.render(scene);
 
     let window = RenderWindow::new(
         "conics",

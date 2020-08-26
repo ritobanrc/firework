@@ -4,7 +4,7 @@ use crate::material::Material;
 use crate::objects::{Triangle, TriangleMesh};
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
-use crate::serde_compat::SerializedRenderObject;
+use crate::serde_compat::{Rotor3Def, SerializableShape, Vec3Def};
 use itertools::iproduct;
 use serde::{Deserialize, Serialize};
 use tiny_rng::LcRng;
@@ -17,11 +17,11 @@ pub type MaterialIdx = usize;
 pub type RenderObjectIdx = usize;
 
 /// Represents a Scene
-//#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Scene {
     pub render_objects: Vec<RenderObject>,
-    pub materials: Vec<Box<dyn Material + Sync + 'static>>, // TODO: Remove the layer of indirection here
-    pub environment: Box<dyn Environment + Sync + 'static>,
+    pub materials: Vec<Box<dyn Material + 'static>>, // TODO: Remove the layer of indirection here
+    pub environment: Box<dyn Environment + 'static>,
 }
 
 impl Scene {
@@ -44,13 +44,13 @@ impl Scene {
         self.render_objects.len() - 1
     }
 
-    pub fn add_mesh(&mut self, mesh: TriangleMesh) {
-        use std::sync::Arc;
-        let mesh = Arc::new(mesh);
-        for tri in 0..mesh.num_tris() {
-            self.add_object(RenderObject::new(Triangle::new(Arc::clone(&mesh), tri)));
-        }
-    }
+    //pub fn add_mesh(&mut self, mesh: TriangleMesh) {
+    //use std::sync::Arc;
+    //let mesh = Arc::new(mesh);
+    //for tri in 0..mesh.num_tris() {
+    //self.add_object(RenderObject::new(Triangle::new(Arc::clone(&mesh), tri)));
+    //}
+    //}
 
     /// Returns a reference to the `RenderObject` stored at the given `RenderObjectIdx`
     pub fn get_object(&self, idx: RenderObjectIdx) -> &RenderObject {
@@ -71,7 +71,7 @@ impl Scene {
     }
 
     /// Returns a reference to `Material` stored at the given `MaterialIdx`
-    pub fn get_material(&self, idx: MaterialIdx) -> &(dyn Material + Sync) {
+    pub fn get_material(&self, idx: MaterialIdx) -> &dyn Material {
         self.materials[idx].as_ref()
     }
 
@@ -81,7 +81,35 @@ impl Scene {
     }
 }
 
-impl Hitable for Scene {
+pub(crate) struct SceneInternal {
+    pub render_objects: Vec<RenderObjectInternal>,
+    pub materials: Vec<Box<dyn Material + 'static>>, // TODO: Remove the layer of indirection here
+    pub environment: Box<dyn Environment + 'static>,
+}
+
+impl SceneInternal {
+    /// Returns a reference to the `RenderObject` stored at the given `RenderObjectIdx`
+    pub fn get_object(&self, idx: RenderObjectIdx) -> &RenderObjectInternal {
+        &self.render_objects[idx]
+    }
+
+    /// Returns a reference to `Material` stored at the given `MaterialIdx`
+    pub fn get_material(&self, idx: MaterialIdx) -> &dyn Material {
+        self.materials[idx].as_ref()
+    }
+}
+
+impl From<Scene> for SceneInternal {
+    fn from(scene: Scene) -> Self {
+        SceneInternal {
+            render_objects: scene.render_objects.into_iter().map(|x| x.into()).collect(),
+            materials: scene.materials,
+            environment: scene.environment,
+        }
+    }
+}
+
+impl Hitable for SceneInternal {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
         let mut last_hit = None;
         let mut closest = t_max;
@@ -111,68 +139,33 @@ impl Hitable for Scene {
     }
 }
 
-/// A struct representing an object that can be rendered. Contains the base `Hitable` as well as
-/// any transformations on it.
 #[derive(Deserialize)]
-#[serde(from = "SerializedRenderObject")]
-pub struct RenderObject {
+#[serde(from = "RenderObject")]
+pub(crate) struct RenderObjectInternal {
     pub(crate) obj: Box<dyn Hitable + 'static>,
     pub(crate) position: Vec3,
-    pub(crate) rotation: Rotor3,
     pub(crate) rotation_mat: Mat3,
     pub(crate) inv_rotation_mat: Mat3,
     pub(crate) flip_normals: bool,
     pub(crate) aabb: Option<AABB>,
 }
 
-impl RenderObject {
-    /// Creates a new RenderObject
-    pub fn new<T: Hitable + Sync + 'static>(obj: T) -> Self {
-        let aabb = obj.bounding_box();
-        RenderObject {
-            obj: Box::new(obj),
-            position: Vec3::zero(),
-            rotation: Rotor3::identity(),
-            rotation_mat: Mat3::identity(),
-            inv_rotation_mat: Mat3::identity(),
-            flip_normals: false,
-            aabb,
-        }
+impl From<RenderObject> for RenderObjectInternal {
+    fn from(s: RenderObject) -> RenderObjectInternal {
+        let mut obj = RenderObjectInternal {
+            obj: s.obj.to_hitable(),
+            position: s.position,
+            rotation_mat: s.rotation.into_matrix(),
+            inv_rotation_mat: s.rotation.reversed().into_matrix(),
+            flip_normals: s.flip_normals,
+            aabb: None,
+        };
+        obj.update_bounding_box();
+        obj
     }
+}
 
-    /// Sets the position of the `RenderObject`
-    #[inline(always)]
-    pub fn position(mut self, x: f32, y: f32, z: f32) -> Self {
-        self.position = Vec3::new(x, y, z);
-        self.update_bounding_box();
-        self
-    }
-
-    /// Sets the position of the `RenderObject`
-    #[inline(always)]
-    pub fn position_vec(mut self, pos: Vec3) -> Self {
-        self.position = pos;
-        self.update_bounding_box();
-        self
-    }
-
-    /// Sets the rotation of the `RenderObject` on the Y Axis
-    #[inline(always)]
-    pub fn rotate(mut self, rotor: Rotor3) -> Self {
-        self.rotation = rotor;
-        self.rotation_mat = rotor.into_matrix();
-        self.inv_rotation_mat = rotor.reversed().into_matrix();
-        self.update_bounding_box();
-        self
-    }
-
-    /// Sets the `flip_normals` value to the opposite of what it was previously
-    #[inline(always)]
-    pub fn flip_normals(mut self) -> Self {
-        self.flip_normals = !self.flip_normals;
-        self
-    }
-
+impl RenderObjectInternal {
     pub(crate) fn update_bounding_box(&mut self) {
         self.aabb = if let Some(bbox) = self.obj.bounding_box() {
             // First, rotate the bounding box
@@ -212,7 +205,62 @@ impl RenderObject {
     }
 }
 
-impl Hitable for RenderObject {
+/// A struct representing an object that can be rendered. Contains the base `Hitable` as well as
+/// any transformations on it.
+#[derive(Serialize, Deserialize)]
+pub struct RenderObject {
+    obj: Box<dyn SerializableShape>,
+    #[serde(with = "Vec3Def")]
+    position: Vec3,
+    #[serde(with = "Rotor3Def")]
+    rotation: Rotor3,
+    flip_normals: bool,
+}
+
+impl RenderObject {
+    /// Creates a new RenderObject
+    pub fn new<T: SerializableShape + 'static>(obj: T) -> Self {
+        let aabb = obj.bounding_box();
+        RenderObject {
+            obj: Box::new(obj),
+            position: Vec3::zero(),
+            rotation: Rotor3::identity(),
+            flip_normals: false,
+        }
+    }
+
+    /// Sets the position of the `RenderObject`
+    #[inline(always)]
+    pub fn position(mut self, x: f32, y: f32, z: f32) -> Self {
+        self.position = Vec3::new(x, y, z);
+        self
+    }
+
+    /// Sets the position of the `RenderObject`
+    #[inline(always)]
+    pub fn position_vec(mut self, pos: Vec3) -> Self {
+        self.position = pos;
+        self
+    }
+
+    /// Sets the rotation of the `RenderObject` on the Y Axis
+    #[inline(always)]
+    pub fn rotate(mut self, rotor: Rotor3) -> Self {
+        self.rotation = rotor;
+        //self.rotation_mat = rotor.into_matrix();
+        //self.inv_rotation_mat = rotor.reversed().into_matrix();
+        self
+    }
+
+    /// Sets the `flip_normals` value to the opposite of what it was previously
+    #[inline(always)]
+    pub fn flip_normals(mut self) -> Self {
+        self.flip_normals = !self.flip_normals;
+        self
+    }
+}
+
+impl Hitable for RenderObjectInternal {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
         let cos_trace = {
             let trace = self.rotation_mat[0][0] + self.rotation_mat[1][1] + self.rotation_mat[2][2];

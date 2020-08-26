@@ -8,7 +8,7 @@ use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Vec2, Vec3};
 
 #[typetag::serde(tag = "material")]
-pub trait Material {
+pub trait Material: Sync {
     fn scatter(&self, r_in: &Ray, hit: &RaycastHit, rand: &mut LcRng) -> Option<ScatterResult>;
 
     fn emit(&self, _uv: Vec2, _point: &Vec3) -> Vec3 {

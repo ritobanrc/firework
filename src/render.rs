@@ -1,7 +1,7 @@
 use crate::aabb::AABB;
 use crate::camera::{Camera, CameraSettings};
 use crate::ray::Ray;
-use crate::scene::{MaterialIdx, Scene};
+use crate::scene::{MaterialIdx, RenderObjectInternal, Scene, SceneInternal};
 use crate::util::Color;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tiny_rng::{LcRng, Rand};
@@ -9,7 +9,13 @@ use ultraviolet::{Vec2, Vec3};
 
 /// Performs the ray tracing for a given ray in the world and returns it's color.
 /// TODO: Solve the inconsistency between `scene` and `bvh_root` arguments
-pub fn color(r: &Ray, scene: &Scene, root: &impl Hitable, depth: usize, rand: &mut LcRng) -> Vec3 {
+pub(crate) fn color(
+    r: &Ray,
+    scene: &SceneInternal,
+    root: &impl Hitable,
+    depth: usize,
+    rand: &mut LcRng,
+) -> Vec3 {
     if let Some(hit) = root.hit(r, 0.001, 2e9, rand) {
         let emit = scene.get_material(hit.material).emit(hit.uv, &hit.point);
         if depth < 10 {
@@ -90,14 +96,16 @@ impl Renderer {
         self
     }
 
-    pub fn render(&self, scene: &Scene) -> Vec<Color> {
+    pub fn render(&self, scene: Scene) -> Vec<Color> {
         use crate::bvh::BVHNode;
         use rayon::prelude::*;
+
+        let scene = scene.into();
 
         let mut buffer = vec![Color(0, 0, 0); self.width * self.height];
 
         let bvh = if self.use_bvh {
-            Some(BVHNode::new(scene))
+            Some(BVHNode::new(&scene))
         } else {
             None
         };
@@ -108,9 +116,9 @@ impl Renderer {
             let completed = AtomicUsize::new(0);
             buffer.par_iter_mut().enumerate().for_each(|(idx, pix)| {
                 if let Some(bvh) = &bvh {
-                    *pix = self.render_pixel(scene, bvh, &camera, idx)
+                    *pix = self.render_pixel(&scene, bvh, &camera, idx)
                 } else {
-                    *pix = self.render_pixel(scene, scene, &camera, idx)
+                    *pix = self.render_pixel(&scene, &scene, &camera, idx)
                 }
                 let count = completed.fetch_add(1, Ordering::SeqCst);
                 if count % 10000 == 0 {
@@ -124,9 +132,9 @@ impl Renderer {
         } else {
             buffer.iter_mut().enumerate().for_each(|(idx, pix)| {
                 if let Some(bvh) = &bvh {
-                    *pix = self.render_pixel(scene, bvh, &camera, idx)
+                    *pix = self.render_pixel(&scene, bvh, &camera, idx)
                 } else {
-                    *pix = self.render_pixel(scene, scene, &camera, idx)
+                    *pix = self.render_pixel(&scene, &scene, &camera, idx)
                 }
 
                 if idx % 10000 == 0 {
@@ -144,7 +152,7 @@ impl Renderer {
 
     fn render_pixel(
         &self,
-        scene: &Scene,
+        scene: &SceneInternal,
         root: &impl Hitable,
         camera: &Camera,
         idx: usize,

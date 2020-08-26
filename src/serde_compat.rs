@@ -1,34 +1,6 @@
 use crate::render::Hitable;
-use crate::scene::RenderObject;
 use serde::{Deserialize, Serialize};
 use ultraviolet::{Bivec3, Rotor3, Vec2, Vec3};
-
-#[derive(Serialize, Deserialize)]
-pub(crate) struct SerializedRenderObject {
-    obj: Box<dyn SerializableShape>,
-    #[serde(with = "Vec3Def")]
-    position: Vec3,
-    #[serde(with = "Rotor3Def")]
-    rotation: Rotor3,
-    flip_normals: bool,
-}
-
-impl From<SerializedRenderObject> for RenderObject {
-    fn from(s: SerializedRenderObject) -> RenderObject {
-        let mut obj = RenderObject {
-            obj: s.obj.to_hitable(),
-            position: s.position,
-            rotation: s.rotation,
-            rotation_mat: s.rotation.into_matrix(),
-            inv_rotation_mat: s.rotation.reversed().into_matrix(),
-            flip_normals: s.flip_normals,
-            aabb: None,
-        };
-        obj.update_bounding_box();
-        obj
-    }
-}
-
 //impl From<RenderObject> for SerializedRenderObject {
 //fn from(r: RenderObject) -> Self {
 //SerializedRenderObject {
@@ -57,7 +29,7 @@ pub(crate) struct Vec2Def {
 
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "Rotor3")]
-struct Rotor3Def {
+pub(crate) struct Rotor3Def {
     s: f32,
     #[serde(with = "Bivec3Def")]
     bv: Bivec3,
@@ -72,9 +44,9 @@ struct Bivec3Def {
 }
 
 #[typetag::serde(tag = "object_type")]
-trait SerializableShape: AsHitable {}
+pub trait SerializableShape: AsHitable {}
 
-trait AsHitable: Hitable {
+pub trait AsHitable: Hitable {
     fn as_hitable(&self) -> &dyn Hitable;
     fn to_hitable(self: Box<Self>) -> Box<dyn Hitable>
     where
@@ -109,6 +81,15 @@ impl SerializableShape for crate::objects::Cylinder {}
 #[typetag::serde]
 impl SerializableShape for crate::objects::Rect3d {}
 
+#[typetag::serde]
+impl SerializableShape for crate::objects::XYRect {}
+
+#[typetag::serde]
+impl SerializableShape for crate::objects::YZRect {}
+
+#[typetag::serde]
+impl SerializableShape for crate::objects::XZRect {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -116,7 +97,7 @@ mod tests {
     fn serialize_one() {
         use crate::objects::Cylinder;
 
-        let cylinder = SerializedRenderObject {
+        let cylinder = RenderObject {
             obj: Box::new(Cylinder::partial(1.49, 3., 300., 0)),
             position: Vec3::new(3.0, 1.5, 1.),
             rotation: Rotor3::from_euler_angles(

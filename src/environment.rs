@@ -4,7 +4,7 @@ use ultraviolet::Vec3;
 
 /// A trait for the world environment
 #[typetag::serde(tag = "environment")]
-pub trait Environment {
+pub trait Environment: Sync {
     fn sample(&self, dir: Vec3) -> Vec3;
 }
 

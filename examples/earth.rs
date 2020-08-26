@@ -52,7 +52,7 @@ fn main() {
         .samples(128)
         .camera(camera);
 
-    let render = renderer.render(&scene);
+    let render = renderer.render(scene);
 
     let window = RenderWindow::new("Earth", Default::default(), renderer.width, renderer.height);
 
