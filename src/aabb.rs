@@ -1,4 +1,5 @@
 use crate::ray::Ray;
+use itertools::izip;
 use std::mem;
 use ultraviolet::Vec3;
 
@@ -27,10 +28,16 @@ impl AABB {
     }
 
     pub fn hit(&self, ray: &Ray, mut tmin: f32, mut tmax: f32) -> bool {
-        for i in 0..3 {
-            let inv_dir = 1. / ray.direction()[i];
-            let mut t0 = (self.min[i] - ray.origin()[i]) * inv_dir;
-            let mut t1 = (self.max[i] - ray.origin()[i]) * inv_dir;
+        izip!(
+            self.min.as_array(),
+            self.max.as_array(),
+            ray.origin().as_array(),
+            ray.direction().as_array()
+        )
+        .all(|(min, max, origin, direction)| {
+            let inv_dir = 1. / direction;
+            let mut t0 = (min - origin) * inv_dir;
+            let mut t1 = (max - origin) * inv_dir;
 
             if inv_dir < 0. {
                 mem::swap(&mut t0, &mut t1);
@@ -38,12 +45,8 @@ impl AABB {
 
             tmin = tmin.max(t0);
             tmax = tmax.min(t1);
-            if tmax <= tmin {
-                return false;
-            }
-        }
-
-        true
+            return tmax > tmin;
+        })
     }
 
     pub fn expand(&self, other: &Self) -> Self {

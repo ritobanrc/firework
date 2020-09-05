@@ -1,5 +1,5 @@
 # Firework
-A "port" of Peter Shirley's "Ray Tracing in a Weekend" book in Rust. Part 2 of the textbook series is still WIP.
+A raytracer that I've been working on. Initially, this started as a port of Peter Shirley's "Ray Tracing in a Weekend" book in Rust, but I've added a bunch more features (like support for meshes and HDRs and scene serialization) and radically changed the API (with significant help from [The PBR Book](http://www.pbr-book.org/3ed-2018/contents.html)). 
 
 Major changes
 - Using rayon for multithreading
