@@ -91,7 +91,7 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    let render = renderer.render(&scene);
+    let render = renderer.render(scene);
 
     let end = std::time::Instant::now();
     println!("Finished Rendering in {} s", (end - start).as_secs());

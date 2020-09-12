@@ -220,7 +220,6 @@ pub struct RenderObject {
 impl RenderObject {
     /// Creates a new RenderObject
     pub fn new<T: SerializableShape + 'static>(obj: T) -> Self {
-        let aabb = obj.bounding_box();
         RenderObject {
             obj: Box::new(obj),
             position: Vec3::zero(),

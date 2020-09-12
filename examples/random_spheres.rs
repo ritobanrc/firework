@@ -84,7 +84,7 @@ fn main() {
         .use_bvh(true)
         .camera(camera);
 
-    let render = renderer.render(&scene);
+    let render = renderer.render(scene);
 
     let end = time::Instant::now();
     println!("Finished Rendering in {} s", (end - start).as_secs());
