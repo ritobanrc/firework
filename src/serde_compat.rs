@@ -89,3 +89,6 @@ impl SerializableShape for crate::objects::YZRect {}
 
 #[typetag::serde]
 impl SerializableShape for crate::objects::XZRect {}
+
+#[typetag::serde]
+impl SerializableShape for crate::objects::ConstantMedium {}

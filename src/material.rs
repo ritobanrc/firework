@@ -188,8 +188,10 @@ pub struct IsotropicMat {
 }
 
 impl IsotropicMat {
-    pub fn new(texture: Box<dyn Texture + Sync>) -> Self {
-        IsotropicMat { texture }
+    pub fn new<T: Texture + 'static>(texture: T) -> Self {
+        IsotropicMat {
+            texture: Box::new(texture),
+        }
     }
 }
 

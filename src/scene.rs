@@ -44,6 +44,24 @@ impl Scene {
         self.render_objects.len() - 1
     }
 
+    /// Adds a volume to the `Scene` and returns its `RenderObjectIdx`.
+    pub fn add_volume<T: crate::texture::Texture + 'static>(
+        &mut self,
+        obj: RenderObject,
+        density: f32,
+        texture: T,
+    ) -> RenderObjectIdx {
+        use crate::material::IsotropicMat;
+        use crate::objects::ConstantMedium;
+
+        let mat = self.add_material(IsotropicMat::new(texture));
+        let ro = RenderObject {
+            obj: Box::new(ConstantMedium::new(obj.obj, density, mat)),
+            ..obj
+        };
+        self.add_object(ro)
+    }
+
     //pub fn add_mesh(&mut self, mesh: TriangleMesh) {
     //use std::sync::Arc;
     //let mesh = Arc::new(mesh);
@@ -205,6 +223,39 @@ impl RenderObjectInternal {
     }
 }
 
+impl Hitable for RenderObjectInternal {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
+        let cos_trace = {
+            let trace = self.rotation_mat[0][0] + self.rotation_mat[1][1] + self.rotation_mat[2][2];
+            0.5 * (trace - 1.) // .acos()
+        };
+        let new_ray = if cos_trace < 0.999 {
+            Ray::new(
+                self.inv_rotation_mat * (*r.origin() - self.position),
+                self.inv_rotation_mat * *r.direction(),
+            )
+        } else {
+            Ray::new(*r.origin() - self.position, *r.direction())
+        };
+        if let Some(mut hit) = self.obj.hit(&new_ray, t_min, t_max, rand) {
+            hit.point = self.rotation_mat * hit.point;
+            hit.point += self.position;
+
+            hit.normal = self.rotation_mat * hit.normal;
+            if self.flip_normals {
+                hit.normal = -hit.normal;
+            }
+            Some(hit)
+        } else {
+            None
+        }
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        self.aabb.clone()
+    }
+}
+
 /// A struct representing an object that can be rendered. Contains the base `Hitable` as well as
 /// any transformations on it.
 #[derive(Serialize, Deserialize)]
@@ -256,38 +307,5 @@ impl RenderObject {
     pub fn flip_normals(mut self) -> Self {
         self.flip_normals = !self.flip_normals;
         self
-    }
-}
-
-impl Hitable for RenderObjectInternal {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
-        let cos_trace = {
-            let trace = self.rotation_mat[0][0] + self.rotation_mat[1][1] + self.rotation_mat[2][2];
-            0.5 * (trace - 1.) // .acos()
-        };
-        let new_ray = if cos_trace < 0.999 {
-            Ray::new(
-                self.inv_rotation_mat * (*r.origin() - self.position),
-                self.inv_rotation_mat * *r.direction(),
-            )
-        } else {
-            Ray::new(*r.origin() - self.position, *r.direction())
-        };
-        if let Some(mut hit) = self.obj.hit(&new_ray, t_min, t_max, rand) {
-            hit.point = self.rotation_mat * hit.point;
-            hit.point += self.position;
-
-            hit.normal = self.rotation_mat * hit.normal;
-            if self.flip_normals {
-                hit.normal = -hit.normal;
-            }
-            Some(hit)
-        } else {
-            None
-        }
-    }
-
-    fn bounding_box(&self) -> Option<AABB> {
-        self.aabb.clone()
     }
 }

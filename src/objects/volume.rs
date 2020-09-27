@@ -3,27 +3,29 @@ use crate::material::IsotropicMat;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::scene::{MaterialIdx, Scene};
+use crate::serde_compat::SerializableShape;
 use crate::texture::Texture;
+use serde::{Deserialize, Serialize};
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Vec2, Vec3};
 
+#[derive(Serialize, Deserialize)]
 pub struct ConstantMedium {
-    obj: Box<dyn Hitable + Sync>,
+    obj: Box<dyn SerializableShape>,
     density: f32,
     material: MaterialIdx,
 }
 
 impl ConstantMedium {
-    pub fn new<T: Hitable + Sync + 'static>(
-        obj: T,
+    pub(crate) fn new(
+        obj: Box<dyn SerializableShape>,
         density: f32,
-        texture: Box<dyn Texture + Sync>,
-        scene: &mut Scene,
+        material: crate::scene::MaterialIdx,
     ) -> Self {
         ConstantMedium {
-            obj: Box::new(obj),
+            obj,
             density,
-            material: scene.add_material(IsotropicMat::new(texture)),
+            material,
         }
     }
 }

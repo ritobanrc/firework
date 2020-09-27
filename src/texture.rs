@@ -20,6 +20,12 @@ impl ConstantTexture {
     pub fn new(color: Vec3) -> Self {
         ConstantTexture { color }
     }
+
+    pub fn from_rgb(r: f32, g: f32, b: f32) -> Self {
+        ConstantTexture {
+            color: Vec3::new(r, g, b),
+        }
+    }
 }
 
 #[typetag::serde]
