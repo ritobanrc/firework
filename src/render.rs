@@ -43,7 +43,7 @@ pub struct RaycastHit {
 /// Trait that allows something to be ray-tracing, i.e. something that can be hit by a ray.
 pub trait Hitable: Sync {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit>;
-    fn bounding_box(&self) -> Option<AABB>;
+    fn bounding_box(&self) -> AABB;
 }
 
 pub struct Renderer {
@@ -97,15 +97,15 @@ impl Renderer {
     }
 
     pub fn render(&self, scene: Scene) -> Vec<Color> {
-        use crate::bvh::BVHNode;
+        use crate::bvh::Aggregate;
         use rayon::prelude::*;
 
-        let scene = scene.into();
+        let scene: SceneInternal = scene.into();
 
         let mut buffer = vec![Color(0, 0, 0); self.width * self.height];
 
         let bvh = if self.use_bvh {
-            Some(BVHNode::new(&scene))
+            Some(scene.build_bvh())
         } else {
             None
         };

@@ -59,10 +59,7 @@ impl Hitable for Sphere {
         }
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
-        Some(AABB::new(
-            -Vec3::one() * self.radius,
-            Vec3::one() * self.radius,
-        ))
+    fn bounding_box(&self) -> AABB {
+        AABB::new(-Vec3::one() * self.radius, Vec3::one() * self.radius)
     }
 }

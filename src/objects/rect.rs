@@ -72,7 +72,7 @@ impl<const A1: Axis, const A2: Axis> Hitable for AARect<{ A1 }, { A2 }> {
         })
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
+    fn bounding_box(&self) -> AABB {
         let mut min = [0f32; 3];
         min[A1 as usize] = self.min.x;
         min[A2 as usize] = self.min.y;
@@ -81,7 +81,7 @@ impl<const A1: Axis, const A2: Axis> Hitable for AARect<{ A1 }, { A2 }> {
         max[A1 as usize] = self.max.x;
         max[A2 as usize] = self.max.y;
         max[Axis::other(A1, A2) as usize] = self.k + 0.01;
-        Some(AABB::new(min.into(), max.into()))
+        AABB::new(min.into(), max.into())
     }
 }
 
@@ -119,7 +119,7 @@ impl Hitable for Rect {
         }
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
+    fn bounding_box(&self) -> AABB {
         match self {
             Rect::XY(rect) => rect.bounding_box(),
             Rect::XZ(rect) => rect.bounding_box(),

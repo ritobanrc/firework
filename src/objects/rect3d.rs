@@ -99,7 +99,7 @@ impl Hitable for Rect3d {
         last_hit
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
-        Some(AABB::new(self.pos, self.pos + self.size))
+    fn bounding_box(&self) -> AABB {
+        AABB::new(self.pos, self.pos + self.size)
     }
 }

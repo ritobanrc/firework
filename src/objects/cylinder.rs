@@ -89,10 +89,10 @@ impl Hitable for Cylinder {
         None
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
-        Some(AABB::new(
+    fn bounding_box(&self) -> AABB {
+        AABB::new(
             Vec3::new(-self.radius, 0., -self.radius),
             Vec3::new(self.radius, self.height, self.radius),
-        ))
+        )
     }
 }

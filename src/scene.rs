@@ -141,19 +141,17 @@ impl Hitable for SceneInternal {
         last_hit
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
+    fn bounding_box(&self) -> AABB {
         let mut result: Option<AABB> = None;
         for render_obj in &self.render_objects {
             let next_box = render_obj.bounding_box();
-            if let Some(next_box) = next_box {
-                if let Some(aabb) = result {
-                    result = Some(aabb.expand(&next_box));
-                } else {
-                    result = Some(next_box);
-                }
+            if let Some(aabb) = result {
+                result = Some(aabb.expand(&next_box));
+            } else {
+                result = Some(next_box);
             }
         }
-        result
+        result.expect("No render objects added to scene!")
     }
 }
 
@@ -165,27 +163,13 @@ pub(crate) struct RenderObjectInternal {
     pub(crate) rotation_mat: Mat3,
     pub(crate) inv_rotation_mat: Mat3,
     pub(crate) flip_normals: bool,
-    pub(crate) aabb: Option<AABB>,
-}
-
-impl From<RenderObject> for RenderObjectInternal {
-    fn from(s: RenderObject) -> RenderObjectInternal {
-        let mut obj = RenderObjectInternal {
-            obj: s.obj.to_hitable(),
-            position: s.position,
-            rotation_mat: s.rotation.into_matrix(),
-            inv_rotation_mat: s.rotation.reversed().into_matrix(),
-            flip_normals: s.flip_normals,
-            aabb: None,
-        };
-        obj.update_bounding_box();
-        obj
-    }
+    pub(crate) aabb: AABB,
 }
 
 impl RenderObjectInternal {
     pub(crate) fn update_bounding_box(&mut self) {
-        self.aabb = if let Some(bbox) = self.obj.bounding_box() {
+        self.aabb = {
+            let bbox = self.obj.bounding_box();
             // First, rotate the bounding box
             // If there is a signficant rotation
             let cos_trace = {
@@ -213,12 +197,10 @@ impl RenderObjectInternal {
                 bbox
             };
             // Then translate it
-            Some(AABB::new(
+            AABB::new(
                 rotated_aabb.min + self.position,
                 rotated_aabb.max + self.position,
-            ))
-        } else {
-            None
+            )
         }
     }
 }
@@ -251,7 +233,7 @@ impl Hitable for RenderObjectInternal {
         }
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
+    fn bounding_box(&self) -> AABB {
         self.aabb.clone()
     }
 }
@@ -265,6 +247,21 @@ pub struct RenderObject {
     #[serde(with = "crate::serde_compat::Rotor3Def")]
     rotation: Rotor3,
     flip_normals: bool,
+}
+
+impl From<RenderObject> for RenderObjectInternal {
+    fn from(s: RenderObject) -> RenderObjectInternal {
+        let mut obj = RenderObjectInternal {
+            obj: s.obj.to_hitable(),
+            position: s.position,
+            rotation_mat: s.rotation.into_matrix(),
+            inv_rotation_mat: s.rotation.reversed().into_matrix(),
+            flip_normals: s.flip_normals,
+            aabb: AABB::new(Vec3::zero(), Vec3::zero()), // This will be overwritten in `update_bounding_box`
+        };
+        obj.update_bounding_box();
+        obj
+    }
 }
 
 impl RenderObject {

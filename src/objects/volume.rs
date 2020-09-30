@@ -56,7 +56,7 @@ impl Hitable for ConstantMedium {
         None
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
+    fn bounding_box(&self) -> AABB {
         self.obj.bounding_box()
     }
 }

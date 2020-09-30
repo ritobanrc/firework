@@ -197,7 +197,7 @@ impl Hitable for Triangle {
         })
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
+    fn bounding_box(&self) -> AABB {
         let [p0, p1, p2] = self.mesh.get_triangle_verts(self.index);
 
         let mut aabb = AABB::from_two_points(p0, p1).expand_to_point(p2);
@@ -217,6 +217,6 @@ impl Hitable for Triangle {
             aabb.max.z += 0.001;
         }
 
-        Some(aabb)
+        aabb
     }
 }
