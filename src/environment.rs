@@ -1,4 +1,3 @@
-use crate::serde_compat::Vec3Def;
 use serde::{Deserialize, Serialize};
 use ultraviolet::Vec3;
 
@@ -10,7 +9,6 @@ pub trait Environment: Sync {
 
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct ColorEnv {
-    #[serde(with = "Vec3Def")]
     color: Vec3,
 }
 
@@ -29,9 +27,7 @@ impl Environment for ColorEnv {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SkyEnv {
-    #[serde(with = "Vec3Def")]
     zenith_color: Vec3,
-    #[serde(with = "Vec3Def")]
     horizon_color: Vec3,
 }
 

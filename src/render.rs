@@ -1,7 +1,7 @@
 use crate::aabb::AABB;
 use crate::camera::{Camera, CameraSettings};
 use crate::ray::Ray;
-use crate::scene::{MaterialIdx, RenderObjectInternal, Scene, SceneInternal};
+use crate::scene::{MaterialIdx, Scene, SceneInternal};
 use crate::util::Color;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tiny_rng::{LcRng, Rand};

@@ -9,6 +9,7 @@ use ultraviolet::{Vec2, Vec3};
 
 type TriangleIdx = usize;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct TriangleMesh {
     indicies: Vec<usize>,
     verts: Vec<Vec3>,
@@ -18,6 +19,7 @@ pub struct TriangleMesh {
 }
 
 impl TriangleMesh {
+    /// Creates a new `TriangleMesh` from arrays of data.
     pub fn new(
         verts: Vec<Vec3>,
         indicies: Vec<usize>,
@@ -46,6 +48,7 @@ impl TriangleMesh {
         })
     }
 
+    /// Translates every vertex in the `TriangleMesh` by `pos`
     pub fn translate(mut self, pos: Vec3) -> Self {
         for vert in &mut self.verts {
             *vert += pos;

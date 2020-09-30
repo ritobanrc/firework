@@ -1,32 +1,8 @@
 use crate::render::Hitable;
 use serde::{Deserialize, Serialize};
-use ultraviolet::{Bivec3, Rotor3, Vec2, Vec3};
-//impl From<RenderObject> for SerializedRenderObject {
-//fn from(r: RenderObject) -> Self {
-//SerializedRenderObject {
-//obj: r.obj,
-//position: r.position,
-//rotation: r.rotation,
-//flip_normals: r.flip_normals,
-//}
-//}
-//}
+use ultraviolet::{Bivec3, Rotor3};
 
-#[derive(Serialize, Deserialize)]
-#[serde(remote = "Vec3")]
-pub(crate) struct Vec3Def {
-    x: f32,
-    y: f32,
-    z: f32,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(remote = "Vec2")]
-pub(crate) struct Vec2Def {
-    x: f32,
-    y: f32,
-}
-
+// These still need to exist while we wait on #74.
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "Rotor3")]
 pub(crate) struct Rotor3Def {

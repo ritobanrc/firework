@@ -1,4 +1,3 @@
-use crate::serde_compat::Vec3Def;
 use image::{GenericImageView, Pixel, Rgba};
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
@@ -12,7 +11,6 @@ pub trait Texture: Sync {
 
 #[derive(Serialize, Deserialize)]
 pub struct ConstantTexture {
-    #[serde(with = "Vec3Def")]
     pub color: Vec3,
 }
 

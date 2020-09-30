@@ -1,10 +1,10 @@
 use crate::aabb::AABB;
 use crate::environment::{ColorEnv, Environment};
 use crate::material::Material;
-use crate::objects::{Triangle, TriangleMesh};
+//use crate::objects::{Triangle, TriangleMesh};
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
-use crate::serde_compat::{Rotor3Def, SerializableShape, Vec3Def};
+use crate::serde_compat::SerializableShape;
 use itertools::iproduct;
 use serde::{Deserialize, Serialize};
 use tiny_rng::LcRng;
@@ -261,9 +261,8 @@ impl Hitable for RenderObjectInternal {
 #[derive(Serialize, Deserialize)]
 pub struct RenderObject {
     obj: Box<dyn SerializableShape>,
-    #[serde(with = "Vec3Def")]
     position: Vec3,
-    #[serde(with = "Rotor3Def")]
+    #[serde(with = "crate::serde_compat::Rotor3Def")]
     rotation: Rotor3,
     flip_normals: bool,
 }

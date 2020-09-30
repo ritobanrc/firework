@@ -1,10 +1,8 @@
 use crate::aabb::AABB;
-use crate::material::IsotropicMat;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
-use crate::scene::{MaterialIdx, Scene};
+use crate::scene::MaterialIdx;
 use crate::serde_compat::SerializableShape;
-use crate::texture::Texture;
 use serde::{Deserialize, Serialize};
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Vec2, Vec3};

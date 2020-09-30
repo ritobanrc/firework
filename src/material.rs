@@ -1,6 +1,5 @@
 use crate::ray::Ray;
 use crate::render::RaycastHit;
-use crate::serde_compat::Vec3Def;
 use crate::texture::{ConstantTexture, Texture};
 use crate::util::{random_in_unit_sphere, reflect, refract, schlick};
 use serde::{Deserialize, Serialize};
@@ -77,7 +76,6 @@ impl Material for LambertianMat {
 
 #[derive(Serialize, Deserialize)]
 pub struct MetalMat {
-    #[serde(with = "Vec3Def")]
     albedo: Vec3,
     roughness: f32,
 }
