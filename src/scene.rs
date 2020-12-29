@@ -1,7 +1,7 @@
 use crate::aabb::AABB;
 use crate::environment::{ColorEnv, Environment};
 use crate::material::Material;
-//use crate::objects::{Triangle, TriangleMesh};
+use crate::objects::{Triangle, TriangleMesh};
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::serde_compat::SerializableShape;
@@ -21,6 +21,7 @@ pub type RenderObjectIdx = usize;
 pub struct Scene {
     pub render_objects: Vec<RenderObject>,
     pub materials: Vec<Box<dyn Material + 'static>>, // TODO: Remove the layer of indirection here
+    pub meshes: Vec<TriangleMesh>,
     pub environment: Box<dyn Environment + 'static>,
 }
 
@@ -34,6 +35,7 @@ impl Scene {
         Scene {
             render_objects: Vec::new(),
             materials: Vec::new(),
+            meshes: Vec::new(),
             environment: Box::new(ColorEnv::default()),
         }
     }
@@ -56,19 +58,18 @@ impl Scene {
 
         let mat = self.add_material(IsotropicMat::new(texture));
         let ro = RenderObject {
-            obj: Box::new(ConstantMedium::new(obj.obj, density, mat)),
+            obj: Box::new(ConstantMedium::from_boxed(obj.obj, density, mat)),
             ..obj
         };
         self.add_object(ro)
     }
 
-    //pub fn add_mesh(&mut self, mesh: TriangleMesh) {
-    //use std::sync::Arc;
-    //let mesh = Arc::new(mesh);
-    //for tri in 0..mesh.num_tris() {
-    //self.add_object(RenderObject::new(Triangle::new(Arc::clone(&mesh), tri)));
-    //}
-    //}
+    pub fn add_mesh(&mut self, mesh: TriangleMesh) {
+        self.meshes.push(mesh);
+        //for tri in 0..mesh.num_tris() {
+        //self.add_object(RenderObject::new(Triangle::new(Arc::clone(&mesh), tri)));
+        //}
+    }
 
     /// Returns a reference to the `RenderObject` stored at the given `RenderObjectIdx`
     pub fn get_object(&self, idx: RenderObjectIdx) -> &RenderObject {
@@ -119,8 +120,26 @@ impl SceneInternal {
 
 impl From<Scene> for SceneInternal {
     fn from(scene: Scene) -> Self {
+        let mut render_objects: Vec<_> =
+            scene.render_objects.into_iter().map(|x| x.into()).collect();
+
+        render_objects.extend(scene.meshes.into_iter().map(|m| {
+            use crate::bvh::Aggregate;
+            use std::sync::Arc;
+            let obj = Arc::new(m).build_bvh();
+            let aabb = obj.bounding_box();
+            RenderObjectInternal {
+                obj: Box::new(obj),
+                position: Vec3::zero(),
+                rotation_mat: Mat3::identity(),
+                inv_rotation_mat: Mat3::identity(),
+                flip_normals: false,
+                aabb,
+            }
+        }));
+
         SceneInternal {
-            render_objects: scene.render_objects.into_iter().map(|x| x.into()).collect(),
+            render_objects,
             materials: scene.materials,
             environment: scene.environment,
         }
@@ -207,34 +226,54 @@ impl RenderObjectInternal {
 
 impl Hitable for RenderObjectInternal {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
-        let cos_trace = {
-            let trace = self.rotation_mat[0][0] + self.rotation_mat[1][1] + self.rotation_mat[2][2];
-            0.5 * (trace - 1.) // .acos()
-        };
-        let new_ray = if cos_trace < 0.999 {
-            Ray::new(
-                self.inv_rotation_mat * (*r.origin() - self.position),
-                self.inv_rotation_mat * *r.direction(),
-            )
-        } else {
-            Ray::new(*r.origin() - self.position, *r.direction())
-        };
-        if let Some(mut hit) = self.obj.hit(&new_ray, t_min, t_max, rand) {
-            hit.point = self.rotation_mat * hit.point;
-            hit.point += self.position;
-
-            hit.normal = self.rotation_mat * hit.normal;
-            if self.flip_normals {
-                hit.normal = -hit.normal;
-            }
-            Some(hit)
-        } else {
-            None
-        }
+        render_object_internet_hit(self, r, t_min, t_max, rand)
     }
 
     fn bounding_box(&self) -> AABB {
         self.aabb.clone()
+    }
+}
+
+impl Hitable for &RenderObjectInternal {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
+        render_object_internet_hit(self, r, t_min, t_max, rand)
+    }
+
+    fn bounding_box(&self) -> AABB {
+        self.aabb.clone()
+    }
+}
+
+fn render_object_internet_hit(
+    obj: &RenderObjectInternal,
+    r: &Ray,
+    t_min: f32,
+    t_max: f32,
+    rand: &mut LcRng,
+) -> Option<RaycastHit> {
+    let cos_trace = {
+        let trace = obj.rotation_mat[0][0] + obj.rotation_mat[1][1] + obj.rotation_mat[2][2];
+        0.5 * (trace - 1.) // .acos()
+    };
+    let new_ray = if cos_trace < 0.999 {
+        Ray::new(
+            obj.inv_rotation_mat * (*r.origin() - obj.position),
+            obj.inv_rotation_mat * *r.direction(),
+        )
+    } else {
+        Ray::new(*r.origin() - obj.position, *r.direction())
+    };
+    if let Some(mut hit) = obj.obj.hit(&new_ray, t_min, t_max, rand) {
+        hit.point = obj.rotation_mat * hit.point;
+        hit.point += obj.position;
+
+        hit.normal = obj.rotation_mat * hit.normal;
+        if obj.flip_normals {
+            hit.normal = -hit.normal;
+        }
+        Some(hit)
+    } else {
+        None
     }
 }
 

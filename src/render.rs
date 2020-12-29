@@ -46,6 +46,16 @@ pub trait Hitable: Sync {
     fn bounding_box(&self) -> AABB;
 }
 
+impl Hitable for Box<dyn Hitable> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
+        self.as_ref().hit(r, t_min, t_max, rand)
+    }
+
+    fn bounding_box(&self) -> AABB {
+        self.as_ref().bounding_box()
+    }
+}
+
 pub struct Renderer {
     /// The width of the render (in pixels)
     pub width: usize,

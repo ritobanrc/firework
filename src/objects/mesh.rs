@@ -18,6 +18,16 @@ pub struct TriangleMesh {
     material: MaterialIdx,
 }
 
+impl crate::serde_compat::AsHitable for Arc<TriangleMesh> {
+    fn to_hitable(self: Box<Self>) -> Box<dyn Hitable>
+    where
+        Self: 'static,
+    {
+        use crate::bvh::Aggregate;
+        Box::new(self.build_bvh())
+    }
+}
+
 impl TriangleMesh {
     /// Creates a new `TriangleMesh` from arrays of data.
     pub fn new(
@@ -105,8 +115,8 @@ impl TriangleMesh {
 }
 
 pub struct Triangle {
-    mesh: Arc<TriangleMesh>, // I don't like this. This feel "object oriented". Also, there should be a way to easily swap out Arc for Rc if the user isn't using multithreading
-    index: TriangleIdx,
+    pub(crate) mesh: Arc<TriangleMesh>, // I don't like this. This feel "object oriented". Also, there should be a way to easily swap out Arc for Rc if the user isn't using multithreading
+    pub(crate) index: TriangleIdx,
 }
 
 impl Triangle {
@@ -114,6 +124,13 @@ impl Triangle {
         Triangle { mesh, index }
     }
 }
+
+//impl std::ops::Deref for Triangle {
+//type Target = Triangle;
+//fn deref(&self) -> &Self::Target {
+//self
+//}
+//}
 
 impl Hitable for Triangle {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, _rand: &mut LcRng) -> Option<RaycastHit> {

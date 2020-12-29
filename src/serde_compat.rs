@@ -20,51 +20,72 @@ struct Bivec3Def {
 }
 
 #[typetag::serde(tag = "object_type")]
-pub trait SerializableShape: AsHitable {}
+pub trait SerializableShape: AsHitable + Sync {}
 
-pub trait AsHitable: Hitable {
-    fn as_hitable(&self) -> &dyn Hitable;
+pub trait AsHitable {
     fn to_hitable(self: Box<Self>) -> Box<dyn Hitable>
     where
         Self: 'static;
 }
 
-impl<T: SerializableShape> AsHitable for T {
-    fn as_hitable(&self) -> &dyn Hitable {
-        self
-    }
+macro_rules! impl_shape_traits {
+    ($($y:path),+) => {
+        $(
+            impl AsHitable for $y {
+                fn to_hitable(self: Box<$y>) -> Box<dyn Hitable> where Self: 'static {
+                    self
+                }
+            }
 
-    fn to_hitable(self: Box<Self>) -> Box<dyn Hitable>
-    where
-        Self: 'static,
-    {
-        self
-    }
+
+            #[typetag::serde]
+            impl SerializableShape for $y {}
+        )+
+    };
 }
 
-#[typetag::serde]
-impl SerializableShape for crate::objects::Cone {}
+use crate::objects::*;
+impl_shape_traits!(Cone, Sphere, Disk, Cylinder, Rect3d, XYRect, YZRect, XZRect);
 
 #[typetag::serde]
-impl SerializableShape for crate::objects::Sphere {}
+impl SerializableShape for crate::objects::ConstantMedium<Box<dyn SerializableShape>> {}
 
-#[typetag::serde]
-impl SerializableShape for crate::objects::Disk {}
+//impl<T: Hitable + SerializableShape> AsHitable for T {
+////fn as_hitable(&self) -> &dyn Hitable {
+////self
+////}
 
-#[typetag::serde]
-impl SerializableShape for crate::objects::Cylinder {}
+//fn to_hitable(self: Box<Self>) -> Box<dyn Hitable>
+//where
+//Self: 'static,
+//{
+//self
+//}
+//}
 
-#[typetag::serde]
-impl SerializableShape for crate::objects::Rect3d {}
+//#[typetag::serde]
+//impl SerializableShape for crate::objects::Cone {}
 
-#[typetag::serde]
-impl SerializableShape for crate::objects::XYRect {}
+//#[typetag::serde]
+//impl SerializableShape for crate::objects::Sphere {}
 
-#[typetag::serde]
-impl SerializableShape for crate::objects::YZRect {}
+//#[typetag::serde]
+//impl SerializableShape for crate::objects::Disk {}
 
-#[typetag::serde]
-impl SerializableShape for crate::objects::XZRect {}
+//#[typetag::serde]
+//impl SerializableShape for crate::objects::Cylinder {}
 
-#[typetag::serde]
-impl SerializableShape for crate::objects::ConstantMedium {}
+//#[typetag::serde]
+//impl SerializableShape for crate::objects::Rect3d {}
+
+//#[typetag::serde]
+//impl SerializableShape for crate::objects::XYRect {}
+
+//#[typetag::serde]
+//impl SerializableShape for crate::objects::YZRect {}
+
+//#[typetag::serde]
+//impl SerializableShape for crate::objects::XZRect {}
+
+//#[typetag::serde]
+//impl SerializableShape for crate::objects::ConstantMedium<Box<dyn SerializableShape>> {}

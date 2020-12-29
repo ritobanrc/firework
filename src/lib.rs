@@ -1,6 +1,5 @@
 #![feature(array_value_iter)]
 #![feature(exclusive_range_pattern)]
-#![feature(clamp)]
 #![feature(const_generics)]
 #![allow(incomplete_features)]
 
