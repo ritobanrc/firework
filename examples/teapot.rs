@@ -1,9 +1,9 @@
 use firework::camera::CameraSettings;
 use firework::environment::SkyEnv;
-use firework::material::LambertianMat;
+use firework::material::MetalMat;
 use firework::objects::TriangleMesh;
 use firework::render::Renderer;
-use firework::scene::{MaterialIdx, Scene};
+use firework::scene::{MaterialIdx, RenderObject, Scene};
 use firework::window::RenderWindow;
 use std::convert::AsRef;
 use std::fmt;
@@ -36,7 +36,8 @@ where
         //);
         //}
 
-        // Normals and texture coordinates are also loaded, but not printed in this example
+        // Normals and texture coordinates are also loaded, but not printed in this exampl
+        // e
         println!("model[{}].vertices: {}", i, mesh.positions.len() / 3);
         assert!(mesh.positions.len() % 3 == 0);
         //for v in 0..mesh.positions.len() / 3 {
@@ -60,14 +61,16 @@ where
             material,
         )
         .unwrap();
-        scene.add_mesh(triangle_mesh);
+        //scene.add_mesh(triangle_mesh);
+
+        scene.add_object(RenderObject::new(triangle_mesh));
     }
 }
 
 fn teapot_scene() -> Scene {
     let mut scene = Scene::new();
 
-    let diffuse = scene.add_material(LambertianMat::with_color(Vec3::broadcast(0.8)));
+    let diffuse = scene.add_material(MetalMat::new(Vec3::broadcast(0.8), 0.3));
     add_obj(&mut scene, "teapot.obj", diffuse);
     scene.set_environment(SkyEnv::default());
 
@@ -76,6 +79,12 @@ fn teapot_scene() -> Scene {
 
 fn main() {
     let scene = teapot_scene();
+
+    use std::io::Write;
+    let mut file = std::fs::File::create("scenes/teapot.yml").unwrap();
+    file.write_all(serde_yaml::to_string(&scene).unwrap().as_bytes())
+        .unwrap();
+
     let camera = CameraSettings::default()
         .cam_pos(Vec3::new(0., 30., 50.))
         //.look_at(Vec3::new(0., 0., 0.))

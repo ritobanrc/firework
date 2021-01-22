@@ -1,7 +1,7 @@
 use crate::aabb::AABB;
 use crate::environment::{ColorEnv, Environment};
 use crate::material::Material;
-use crate::objects::{Triangle, TriangleMesh};
+use crate::objects::TriangleMesh;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::serde_compat::SerializableShape;
@@ -64,13 +64,6 @@ impl Scene {
         self.add_object(ro)
     }
 
-    pub fn add_mesh(&mut self, mesh: TriangleMesh) {
-        self.meshes.push(mesh);
-        //for tri in 0..mesh.num_tris() {
-        //self.add_object(RenderObject::new(Triangle::new(Arc::clone(&mesh), tri)));
-        //}
-    }
-
     /// Returns a reference to the `RenderObject` stored at the given `RenderObjectIdx`
     pub fn get_object(&self, idx: RenderObjectIdx) -> &RenderObject {
         &self.render_objects[idx]
@@ -124,12 +117,11 @@ impl From<Scene> for SceneInternal {
             scene.render_objects.into_iter().map(|x| x.into()).collect();
 
         render_objects.extend(scene.meshes.into_iter().map(|m| {
-            use crate::bvh::Aggregate;
-            use std::sync::Arc;
-            let obj = Arc::new(m).build_bvh();
+            use crate::serde_compat::AsHitable;
+            let obj = AsHitable::to_hitable(Box::new(m));
             let aabb = obj.bounding_box();
             RenderObjectInternal {
-                obj: Box::new(obj),
+                obj,
                 position: Vec3::zero(),
                 rotation_mat: Mat3::identity(),
                 inv_rotation_mat: Mat3::identity(),

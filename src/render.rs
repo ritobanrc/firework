@@ -40,7 +40,7 @@ pub struct RaycastHit {
     pub uv: Vec2,
 }
 
-/// Trait that allows something to be ray-tracing, i.e. something that can be hit by a ray.
+/// Trait that allows something to be ray-traced, i.e. something that can be hit by a ray.
 pub trait Hitable: Sync {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit>;
     fn bounding_box(&self) -> AABB;

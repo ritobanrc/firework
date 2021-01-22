@@ -18,15 +18,19 @@ pub struct TriangleMesh {
     material: MaterialIdx,
 }
 
-impl crate::serde_compat::AsHitable for Arc<TriangleMesh> {
+impl crate::serde_compat::AsHitable for TriangleMesh {
     fn to_hitable(self: Box<Self>) -> Box<dyn Hitable>
     where
         Self: 'static,
     {
         use crate::bvh::Aggregate;
-        Box::new(self.build_bvh())
+        let arc: Arc<TriangleMesh> = self.into();
+        Box::new(arc.build_bvh())
     }
 }
+
+#[typetag::serde]
+impl crate::serde_compat::SerializableShape for TriangleMesh {}
 
 impl TriangleMesh {
     /// Creates a new `TriangleMesh` from arrays of data.
