@@ -6,6 +6,7 @@ use crate::scene::MaterialIdx;
 use tiny_rng::LcRng;
 use ultraviolet::Vec3;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Rect3d {
     pos: Vec3,
     size: Vec3,
@@ -98,7 +99,7 @@ impl Hitable for Rect3d {
         last_hit
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
-        Some(AABB::new(self.pos, self.pos + self.size))
+    fn bounding_box(&self) -> AABB {
+        AABB::new(self.pos, self.pos + self.size)
     }
 }

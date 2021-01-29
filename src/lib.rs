@@ -1,18 +1,16 @@
 #![feature(array_value_iter)]
 #![feature(exclusive_range_pattern)]
-#![feature(clamp)]
 #![feature(const_generics)]
 #![allow(incomplete_features)]
-
-#[macro_use]
-extern crate itertools;
 
 mod aabb;
 mod bvh;
 mod ray;
+mod serde_compat;
 mod util;
 
 pub mod camera;
+pub mod environment;
 pub mod material;
 pub mod objects;
 pub mod render;

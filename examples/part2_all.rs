@@ -10,7 +10,7 @@ use std::time;
 use tiny_rng::{Rand, Rng};
 use ultraviolet::Vec3;
 
-fn final_scene(rand: &mut impl Rand) -> Scene<'static> {
+fn final_scene(rand: &mut impl Rand) -> Scene {
     let mut scene = Scene::new();
 
     //let mut subscene = Scene::new();

@@ -1,4 +1,5 @@
 use firework::camera::CameraSettings;
+use firework::environment::SkyEnv;
 use firework::material::{EmissiveMat, LambertianMat};
 use firework::objects::{Sphere, XZRect, YZRect};
 use firework::render::Renderer;
@@ -8,26 +9,7 @@ use firework::window::RenderWindow;
 use image::open;
 use ultraviolet::{Rotor3, Vec3};
 
-/// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
-/// TODO: Don't have hardcoded SKY_BLUE and SKY_WHITE colors.
-fn sky_color(dir: Vec3) -> Vec3 {
-    const SKY_BLUE: Vec3 = Vec3 {
-        x: 0.5,
-        y: 0.7,
-        z: 1.0,
-    };
-    const SKY_WHITE: Vec3 = Vec3 {
-        x: 1.,
-        y: 1.,
-        z: 1.,
-    };
-
-    // Take the y (from -1 to +1) and map it to 0..1
-    let t = 0.5 * (dir.y + 1.0);
-    (1. - t) * SKY_WHITE + t * SKY_BLUE
-}
-
-pub fn earth_scene() -> Scene<'static> {
+pub fn earth_scene() -> Scene {
     let mut scene = Scene::new();
     let image = open("./earthmap.jpg").unwrap();
     let earth_mat = scene.add_material(LambertianMat::new(ImageTexture::new(image)));
@@ -53,7 +35,7 @@ pub fn earth_scene() -> Scene<'static> {
             .position(0., 0., -10.),
     );
 
-    scene.set_environment(sky_color);
+    scene.set_environment(SkyEnv::default());
     scene
 }
 
@@ -70,7 +52,7 @@ fn main() {
         .samples(128)
         .camera(camera);
 
-    let render = renderer.render(&scene);
+    let render = renderer.render(scene);
 
     let window = RenderWindow::new("Earth", Default::default(), renderer.width, renderer.height);
 

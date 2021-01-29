@@ -8,6 +8,7 @@ use ultraviolet::{Vec2, Vec3};
 /// Creates a disk facing upwards with a given radius.
 /// The `phi_max` parameter can be used to create a sector with the given angle.
 /// The `inner_radius` parameter can be used to create an annulus (2D donut).
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Disk {
     radius: f32,
     phi_max: f32,
@@ -81,10 +82,10 @@ impl Hitable for Disk {
         })
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
-        Some(AABB::new(
+    fn bounding_box(&self) -> AABB {
+        AABB::new(
             Vec3::new(-self.radius, 0., self.radius),
             Vec3::new(-self.radius, 0.001, self.radius),
-        ))
+        )
     }
 }

@@ -1,10 +1,13 @@
 use firework::camera::CameraSettings;
+use firework::environment::Environment;
 use firework::material::{DielectricMat, LambertianMat, MetalMat};
 use firework::objects::{Sphere, XZRect};
 use firework::render::Renderer;
 use firework::scene::{RenderObject, Scene};
 use firework::window::RenderWindow;
+use std::convert::TryFrom;
 use std::f32::consts::PI;
+use std::path::{Path, PathBuf};
 use std::time;
 use ultraviolet::{Vec2, Vec3};
 
@@ -16,34 +19,73 @@ pub fn sphere_uv(point: &Vec3) -> Vec2 {
     Vec2::new(u, v)
 }
 
-// TODO: Properly create an `environment` module in firework that handles all this
-// NOTE: Currently, there isn't importance sampling, so even with insane numbers of samples, it's impossible to get accurate HDR lighting that isn't noisy.
-pub fn hdri_test() -> Scene<'static> {
-    use image::hdr::HDRDecoder;
-    use std::fs::File;
-    use std::io::BufReader;
+#[derive(serde::Deserialize, serde::Serialize, Clone)]
+#[serde(try_from = "PathBuf")]
+#[serde(into = "PathBuf")]
+struct HdrEnvironment {
+    pixels: Vec<image::Rgb<f32>>,
+    path: PathBuf,
+    width: f32,
+    height: f32,
+}
 
-    let mut scene = Scene::new();
+impl HdrEnvironment {
+    pub fn from_path(path: impl AsRef<Path>) -> Result<HdrEnvironment, Box<dyn std::error::Error>> {
+        let path_buf = path.as_ref().to_owned();
+        HdrEnvironment::try_from(path_buf)
+    }
+}
 
-    let hdri = File::open("urban_street_04_4k.hdr").unwrap();
-    let hdri = BufReader::new(hdri);
-    let hdri = HDRDecoder::new(hdri).unwrap();
+impl Into<PathBuf> for HdrEnvironment {
+    fn into(self) -> PathBuf {
+        self.path
+    }
+}
 
-    let hdri_width = hdri.metadata().width as f32;
-    let hdri_height = hdri.metadata().height as f32;
+impl TryFrom<PathBuf> for HdrEnvironment {
+    type Error = Box<dyn std::error::Error>;
+    fn try_from(path: PathBuf) -> Result<HdrEnvironment, Self::Error> {
+        use image::hdr::HdrDecoder;
+        use std::fs::File;
+        use std::io::BufReader;
 
-    let pixels = hdri.read_image_hdr().unwrap();
+        let hdri = File::open("urban_street_04_4k.hdr")?;
+        let hdri = BufReader::new(hdri);
+        let hdri = HdrDecoder::new(hdri)?;
 
-    scene.set_environment(move |dir| {
+        let hdri_width = hdri.metadata().width as f32;
+        let hdri_height = hdri.metadata().height as f32;
+
+        let pixels = hdri.read_image_hdr()?;
+
+        Ok(HdrEnvironment {
+            pixels,
+            path,
+            width: hdri_width,
+            height: hdri_height,
+        })
+    }
+}
+
+#[typetag::serde]
+impl Environment for HdrEnvironment {
+    fn sample(&self, dir: Vec3) -> Vec3 {
         let uv = sphere_uv(&dir);
 
-        let x = (uv.x * hdri_width) as usize;
-        let y = ((1. - uv.y) * hdri_height) as usize;
+        let x = (uv.x * self.width) as usize;
+        let y = ((1. - uv.y) * self.height) as usize;
 
-        let idx = (y as f32 * hdri_width) as usize + x;
+        let idx = (y as f32 * self.width) as usize + x;
 
-        pixels[idx].0.into()
-    });
+        self.pixels[idx].0.into()
+    }
+}
+
+// NOTE: Currently, there isn't importance sampling, so even with insane numbers of samples, it's impossible to get accurate HDR lighting that isn't noisy.
+pub fn hdri_test() -> Scene {
+    let mut scene = Scene::new();
+
+    scene.set_environment(HdrEnvironment::from_path("urban_street_04_4k.hdr").unwrap());
 
     let glass = scene.add_material(DielectricMat::new(1.5));
     let diffuse = scene.add_material(LambertianMat::with_color(Vec3::new(0.8, 0.8, 0.8)));
@@ -72,16 +114,16 @@ fn main() {
     let renderer = Renderer::default()
         .width(200)
         .height(100)
-        .samples(100)
+        .samples(50000)
         .camera(camera);
 
-    let render = renderer.render(&scene);
+    let render = renderer.render(scene);
 
     let end = time::Instant::now();
     println!("Finished Rendering in {} s", (end - start).as_secs());
 
     let window = RenderWindow::new(
-        "Random Spheres",
+        "HDRI Test",
         Default::default(),
         renderer.width,
         renderer.height,

@@ -1,10 +1,15 @@
 use image::{GenericImageView, Pixel, Rgba};
+use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
+use std::path::{Path, PathBuf};
 use ultraviolet::{Vec2, Vec3};
 
-pub trait Texture {
+#[typetag::serde(tag = "texture")]
+pub trait Texture: Sync {
     fn sample(&self, uv: Vec2, point: &Vec3) -> Vec3;
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct ConstantTexture {
     pub color: Vec3,
 }
@@ -13,22 +18,30 @@ impl ConstantTexture {
     pub fn new(color: Vec3) -> Self {
         ConstantTexture { color }
     }
+
+    pub fn from_rgb(r: f32, g: f32, b: f32) -> Self {
+        ConstantTexture {
+            color: Vec3::new(r, g, b),
+        }
+    }
 }
 
+#[typetag::serde]
 impl Texture for ConstantTexture {
     fn sample(&self, _uv: Vec2, _point: &Vec3) -> Vec3 {
         self.color
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct CheckerTexture {
-    pub odd: Box<dyn Texture + Sync>,
-    pub even: Box<dyn Texture + Sync>,
+    pub odd: Box<dyn Texture>,
+    pub even: Box<dyn Texture>,
     pub scale: f32,
 }
 
 impl CheckerTexture {
-    pub fn new(odd: Box<dyn Texture + Sync>, even: Box<dyn Texture + Sync>, scale: f32) -> Self {
+    pub fn new(odd: Box<dyn Texture>, even: Box<dyn Texture>, scale: f32) -> Self {
         CheckerTexture { odd, even, scale }
     }
 
@@ -41,6 +54,7 @@ impl CheckerTexture {
     }
 }
 
+#[typetag::serde]
 impl Texture for CheckerTexture {
     fn sample(&self, uv: Vec2, point: &Vec3) -> Vec3 {
         // TODO: Actually use proper uv coordinates
@@ -58,6 +72,7 @@ impl Texture for CheckerTexture {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct PerlinNoiseTexture {
     scale: f32,
 }
@@ -143,6 +158,7 @@ impl PerlinNoiseTexture {
     }
 }
 
+#[typetag::serde]
 impl Texture for PerlinNoiseTexture {
     fn sample(&self, _uv: Vec2, point: &Vec3) -> Vec3 {
         let a = PerlinNoiseTexture::noise(&(*point * self.scale));
@@ -176,6 +192,7 @@ fn lerp(t: f32, a: f32, b: f32) -> f32 {
     a + t * (b - a)
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TurbulenceTexture {
     depth: usize,
     scale: f32,
@@ -200,12 +217,14 @@ impl TurbulenceTexture {
     }
 }
 
+#[typetag::serde]
 impl Texture for TurbulenceTexture {
     fn sample(&self, _uv: Vec2, point: &Vec3) -> Vec3 {
         Vec3::one() * TurbulenceTexture::turb(self.depth, *point * self.scale)
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct MarbleTexture {
     depth: usize,
     scale: f32,
@@ -217,6 +236,7 @@ impl MarbleTexture {
     }
 }
 
+#[typetag::serde]
 impl Texture for MarbleTexture {
     fn sample(&self, _uv: Vec2, point: &Vec3) -> Vec3 {
         Vec3::one()
@@ -228,23 +248,51 @@ impl Texture for MarbleTexture {
     }
 }
 
-pub struct ImageTexture<T> {
-    image: T,
-}
+#[derive(Serialize, Deserialize)]
+#[serde(transparent)]
+#[repr(transparent)]
+struct ImagePath(PathBuf);
 
-impl<'a, T> ImageTexture<T>
-where
-    T: GenericImageView,
-{
-    pub fn new(image: T) -> ImageTexture<T> {
-        ImageTexture { image }
+impl TryFrom<ImagePath> for ImageTexture {
+    type Error = image::ImageError;
+    fn try_from(path: ImagePath) -> Result<ImageTexture, Self::Error> {
+        ImageTexture::from_path(&path.0)
     }
 }
 
-impl<T> Texture for ImageTexture<T>
-where
-    T: GenericImageView<Pixel = Rgba<u8>>,
-{
+impl Into<ImagePath> for ImageTexture {
+    #[inline(always)]
+    fn into(self) -> ImagePath {
+        ImagePath(self.path.expect("ImageTexture.path not specified"))
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(try_from = "ImagePath")]
+#[serde(into = "ImagePath")]
+/// An Image texture.
+/// Note: Serialization will panic if `path` is not specified
+pub struct ImageTexture {
+    pub image: image::DynamicImage,
+    pub path: Option<PathBuf>,
+}
+
+impl ImageTexture {
+    pub fn new(image: image::DynamicImage) -> ImageTexture {
+        ImageTexture { image, path: None }
+    }
+
+    pub fn from_path(path: impl AsRef<Path>) -> Result<ImageTexture, image::ImageError> {
+        let path_buf = Some(path.as_ref().to_owned());
+        Ok(ImageTexture {
+            image: image::open(path)?,
+            path: path_buf,
+        })
+    }
+}
+
+#[typetag::serde]
+impl Texture for ImageTexture {
     fn sample(&self, uv: Vec2, _point: &Vec3) -> Vec3 {
         let (w, h) = self.image.dimensions();
         let i = uv.x * self.image.dimensions().0 as f32;

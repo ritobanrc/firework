@@ -1,7 +1,7 @@
 use crate::aabb::AABB;
 use crate::camera::{Camera, CameraSettings};
 use crate::ray::Ray;
-use crate::scene::{MaterialIdx, Scene};
+use crate::scene::{MaterialIdx, Scene, SceneInternal};
 use crate::util::Color;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tiny_rng::{LcRng, Rand};
@@ -9,7 +9,13 @@ use ultraviolet::{Vec2, Vec3};
 
 /// Performs the ray tracing for a given ray in the world and returns it's color.
 /// TODO: Solve the inconsistency between `scene` and `bvh_root` arguments
-pub fn color(r: &Ray, scene: &Scene, root: &impl Hitable, depth: usize, rand: &mut LcRng) -> Vec3 {
+pub(crate) fn color(
+    r: &Ray,
+    scene: &SceneInternal,
+    root: &impl Hitable,
+    depth: usize,
+    rand: &mut LcRng,
+) -> Vec3 {
     if let Some(hit) = root.hit(r, 0.001, 2e9, rand) {
         let emit = scene.get_material(hit.material).emit(hit.uv, &hit.point);
         if depth < 10 {
@@ -22,7 +28,7 @@ pub fn color(r: &Ray, scene: &Scene, root: &impl Hitable, depth: usize, rand: &m
             emit
         }
     } else {
-        (scene.environment)(r.direction().normalized())
+        scene.environment.sample(r.direction().normalized())
     }
 }
 
@@ -34,10 +40,20 @@ pub struct RaycastHit {
     pub uv: Vec2,
 }
 
-/// Trait that allows something to be ray-tracing, i.e. something that can be hit by a ray.
-pub trait Hitable {
+/// Trait that allows something to be ray-traced, i.e. something that can be hit by a ray.
+pub trait Hitable: Sync {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit>;
-    fn bounding_box(&self) -> Option<AABB>;
+    fn bounding_box(&self) -> AABB;
+}
+
+impl Hitable for Box<dyn Hitable> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
+        self.as_ref().hit(r, t_min, t_max, rand)
+    }
+
+    fn bounding_box(&self) -> AABB {
+        self.as_ref().bounding_box()
+    }
 }
 
 pub struct Renderer {
@@ -90,14 +106,16 @@ impl Renderer {
         self
     }
 
-    pub fn render(&self, scene: &Scene) -> Vec<Color> {
-        use crate::bvh::BVHNode;
+    pub fn render(&self, scene: Scene) -> Vec<Color> {
+        use crate::bvh::Aggregate;
         use rayon::prelude::*;
+
+        let scene: SceneInternal = scene.into();
 
         let mut buffer = vec![Color(0, 0, 0); self.width * self.height];
 
         let bvh = if self.use_bvh {
-            Some(BVHNode::new(scene))
+            Some(scene.build_bvh())
         } else {
             None
         };
@@ -108,9 +126,9 @@ impl Renderer {
             let completed = AtomicUsize::new(0);
             buffer.par_iter_mut().enumerate().for_each(|(idx, pix)| {
                 if let Some(bvh) = &bvh {
-                    *pix = self.render_pixel(scene, bvh, &camera, idx)
+                    *pix = self.render_pixel(&scene, bvh, &camera, idx)
                 } else {
-                    *pix = self.render_pixel(scene, scene, &camera, idx)
+                    *pix = self.render_pixel(&scene, &scene, &camera, idx)
                 }
                 let count = completed.fetch_add(1, Ordering::SeqCst);
                 if count % 10000 == 0 {
@@ -124,9 +142,9 @@ impl Renderer {
         } else {
             buffer.iter_mut().enumerate().for_each(|(idx, pix)| {
                 if let Some(bvh) = &bvh {
-                    *pix = self.render_pixel(scene, bvh, &camera, idx)
+                    *pix = self.render_pixel(&scene, bvh, &camera, idx)
                 } else {
-                    *pix = self.render_pixel(scene, scene, &camera, idx)
+                    *pix = self.render_pixel(&scene, &scene, &camera, idx)
                 }
 
                 if idx % 10000 == 0 {
@@ -144,7 +162,7 @@ impl Renderer {
 
     fn render_pixel(
         &self,
-        scene: &Scene,
+        scene: &SceneInternal,
         root: &impl Hitable,
         camera: &Camera,
         idx: usize,

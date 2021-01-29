@@ -3,10 +3,11 @@ use crate::objects::solve_quadratic;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::scene::MaterialIdx;
+use serde::{Deserialize, Serialize};
 use tiny_rng::LcRng;
 use ultraviolet::{Vec2, Vec3};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Sphere {
     radius: f32,
     material: MaterialIdx,
@@ -58,10 +59,7 @@ impl Hitable for Sphere {
         }
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
-        Some(AABB::new(
-            -Vec3::one() * self.radius,
-            Vec3::one() * self.radius,
-        ))
+    fn bounding_box(&self) -> AABB {
+        AABB::new(-Vec3::one() * self.radius, Vec3::one() * self.radius)
     }
 }

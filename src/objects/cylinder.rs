@@ -7,6 +7,7 @@ use tiny_rng::LcRng;
 use ultraviolet::{Vec2, Vec3};
 
 /// A vertically oriented cylinder, with a given radius and height
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cylinder {
     radius: f32,
     height: f32,
@@ -88,10 +89,10 @@ impl Hitable for Cylinder {
         None
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
-        Some(AABB::new(
+    fn bounding_box(&self) -> AABB {
+        AABB::new(
             Vec3::new(-self.radius, 0., -self.radius),
             Vec3::new(self.radius, self.height, self.radius),
-        ))
+        )
     }
 }

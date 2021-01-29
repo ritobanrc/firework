@@ -1,37 +1,19 @@
 use firework::camera::CameraSettings;
+use firework::environment::SkyEnv;
 use firework::material::{EmissiveMat, LambertianMat};
 use firework::objects::{Cone, Cylinder, Disk, XZRect, YZRect};
 use firework::render::Renderer;
 use firework::scene::{RenderObject, Scene};
 use firework::texture::ImageTexture;
 use firework::window::RenderWindow;
-use image::open;
 use ultraviolet::{Rotor3, Vec3};
 
-/// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
-/// TODO: Don't have hardcoded SKY_BLUE and SKY_WHITE colors.
-fn sky_color(dir: Vec3) -> Vec3 {
-    const SKY_BLUE: Vec3 = Vec3 {
-        x: 0.5,
-        y: 0.7,
-        z: 1.0,
-    };
-    const SKY_WHITE: Vec3 = Vec3 {
-        x: 1.,
-        y: 1.,
-        z: 1.,
-    };
-
-    // Take the y (from -1 to +1) and map it to 0..1
-    let t = 0.5 * (dir.y + 1.0);
-    (1. - t) * SKY_WHITE + t * SKY_BLUE
-}
-
-pub fn objects_scene() -> Scene<'static> {
+pub fn objects_scene() -> Scene {
     let mut scene = Scene::new();
 
-    let uvmap = open("uvmap.png").unwrap();
-    let uv_image_mat = scene.add_material(LambertianMat::new(ImageTexture::new(uvmap)));
+    let uv_image_mat = scene.add_material(LambertianMat::new(
+        ImageTexture::from_path("uvmap.png").unwrap(),
+    ));
     scene.add_object(RenderObject::new(Cylinder::new(2., 3., uv_image_mat)).position(-4.2, 0., 0.));
 
     let blue = scene.add_material(LambertianMat::with_color(Vec3::new(0., 0.2, 0.4)));
@@ -85,12 +67,23 @@ pub fn objects_scene() -> Scene<'static> {
             .position(0., 0., -10.),
     );
 
-    scene.set_environment(sky_color);
+    scene.set_environment(SkyEnv::default());
     scene
 }
 
 fn main() {
     let scene = objects_scene();
+
+    use std::io::Write;
+    let mut file = std::fs::File::create("scenes/conics.yml").unwrap();
+    file.write_all(serde_yaml::to_string(&scene).unwrap().as_bytes())
+        .unwrap();
+
+    let mut _a = String::new();
+    std::io::stdin().read_line(&mut _a).unwrap();
+
+    let file = std::fs::File::open("scenes/conics.yml").unwrap();
+    let scene: Scene = serde_yaml::from_reader(file).unwrap();
 
     let camera = CameraSettings::default()
         .cam_pos(Vec3::new(6., 4., -7.))
@@ -99,10 +92,10 @@ fn main() {
     let renderer = Renderer::default()
         .width(960)
         .height(540)
-        .samples(512)
+        .samples(128)
         .camera(camera);
 
-    let render = renderer.render(&scene);
+    let render = renderer.render(scene);
 
     let window = RenderWindow::new(
         "conics",

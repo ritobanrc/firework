@@ -9,6 +9,7 @@ use ultraviolet::{Vec2, Vec3};
 
 type TriangleIdx = usize;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct TriangleMesh {
     indicies: Vec<usize>,
     verts: Vec<Vec3>,
@@ -17,7 +18,22 @@ pub struct TriangleMesh {
     material: MaterialIdx,
 }
 
+impl crate::serde_compat::AsHitable for TriangleMesh {
+    fn to_hitable(self: Box<Self>) -> Box<dyn Hitable>
+    where
+        Self: 'static,
+    {
+        use crate::bvh::Aggregate;
+        let arc: Arc<TriangleMesh> = self.into();
+        Box::new(arc.build_bvh())
+    }
+}
+
+#[typetag::serde]
+impl crate::serde_compat::SerializableShape for TriangleMesh {}
+
 impl TriangleMesh {
+    /// Creates a new `TriangleMesh` from arrays of data.
     pub fn new(
         verts: Vec<Vec3>,
         indicies: Vec<usize>,
@@ -46,6 +62,7 @@ impl TriangleMesh {
         })
     }
 
+    /// Translates every vertex in the `TriangleMesh` by `pos`
     pub fn translate(mut self, pos: Vec3) -> Self {
         for vert in &mut self.verts {
             *vert += pos;
@@ -102,8 +119,8 @@ impl TriangleMesh {
 }
 
 pub struct Triangle {
-    mesh: Arc<TriangleMesh>, // I don't like this. This feel "object oriented". Also, there should be a way to easily swap out Arc for Rc if the user isn't using multithreading
-    index: TriangleIdx,
+    pub(crate) mesh: Arc<TriangleMesh>, // I don't like this. This feel "object oriented". Also, there should be a way to easily swap out Arc for Rc if the user isn't using multithreading
+    pub(crate) index: TriangleIdx,
 }
 
 impl Triangle {
@@ -111,6 +128,13 @@ impl Triangle {
         Triangle { mesh, index }
     }
 }
+
+//impl std::ops::Deref for Triangle {
+//type Target = Triangle;
+//fn deref(&self) -> &Self::Target {
+//self
+//}
+//}
 
 impl Hitable for Triangle {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, _rand: &mut LcRng) -> Option<RaycastHit> {
@@ -194,7 +218,7 @@ impl Hitable for Triangle {
         })
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
+    fn bounding_box(&self) -> AABB {
         let [p0, p1, p2] = self.mesh.get_triangle_verts(self.index);
 
         let mut aabb = AABB::from_two_points(p0, p1).expand_to_point(p2);
@@ -214,6 +238,6 @@ impl Hitable for Triangle {
             aabb.max.z += 0.001;
         }
 
-        Some(aabb)
+        aabb
     }
 }

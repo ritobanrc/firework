@@ -7,10 +7,14 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-minifb = "0.15"
-ultraviolet = "0.5"
+minifb = "0.18"
+ultraviolet = { version = "0.5", features = ["serde"] }
 tiny-rng = "0.1"
-image = "0.22"
+image = "0.23"
 rayon = "1.3"
 itertools = "0.9"
 tobj = "1.0"
+typetag = "0.1"
+serde = "1.0"
+serde_yaml = "0.8"
+

@@ -1,34 +1,59 @@
 use crate::aabb::AABB;
-use crate::material::IsotropicMat;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
-use crate::scene::{MaterialIdx, Scene};
-use crate::texture::Texture;
+use crate::scene::MaterialIdx;
+use crate::serde_compat::{AsHitable, SerializableShape};
+use serde::{Deserialize, Serialize};
 use tiny_rng::{LcRng, Rand};
 use ultraviolet::{Vec2, Vec3};
 
-pub struct ConstantMedium {
-    obj: Box<dyn Hitable + Sync>,
+#[derive(Serialize, Deserialize)]
+pub struct ConstantMedium<T> {
+    obj: T,
     density: f32,
     material: MaterialIdx,
 }
 
-impl ConstantMedium {
-    pub fn new<T: Hitable + Sync + 'static>(
+impl ConstantMedium<Box<dyn SerializableShape>> {
+    pub(crate) fn new<T: SerializableShape + 'static>(
         obj: T,
         density: f32,
-        texture: Box<dyn Texture + Sync>,
-        scene: &mut Scene,
+        material: crate::scene::MaterialIdx,
     ) -> Self {
         ConstantMedium {
             obj: Box::new(obj),
             density,
-            material: scene.add_material(IsotropicMat::new(texture)),
+            material,
+        }
+    }
+
+    pub(crate) fn from_boxed(
+        obj: Box<dyn SerializableShape>,
+        density: f32,
+        material: crate::scene::MaterialIdx,
+    ) -> Self {
+        ConstantMedium {
+            obj,
+            density,
+            material,
         }
     }
 }
 
-impl Hitable for ConstantMedium {
+impl AsHitable for ConstantMedium<Box<dyn SerializableShape>> {
+    fn to_hitable(self: Box<Self>) -> Box<dyn Hitable>
+    where
+        Self: 'static,
+    {
+        Box::new(ConstantMedium {
+            obj: self.obj.to_hitable(),
+            density: self.density,
+            material: self.material,
+        })
+    }
+}
+
+impl<T: Hitable> Hitable for ConstantMedium<T> {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rand: &mut LcRng) -> Option<RaycastHit> {
         if let Some(mut rec1) = self.obj.hit(r, -std::f32::MAX, std::f32::MAX, rand) {
             if let Some(mut rec2) = self.obj.hit(r, rec1.t + 0.0001, std::f32::MAX, rand) {
@@ -56,7 +81,7 @@ impl Hitable for ConstantMedium {
         None
     }
 
-    fn bounding_box(&self) -> Option<AABB> {
+    fn bounding_box(&self) -> AABB {
         self.obj.bounding_box()
     }
 }

@@ -1,4 +1,5 @@
 use firework::camera::CameraSettings;
+use firework::environment::SkyEnv;
 use firework::material::{EmissiveMat, LambertianMat};
 use firework::objects::TriangleMesh;
 use firework::objects::YZRect;
@@ -7,29 +8,10 @@ use firework::scene::{RenderObject, Scene};
 use firework::window::RenderWindow;
 use ultraviolet::{Rotor3, Vec3};
 
-/// A function that creates a basic sky gradient between SKY_BLUE and SKY_WHITE
-/// TODO: Don't have hardcoded SKY_BLUE and SKY_WHITE colors.
-fn sky_color(dir: Vec3) -> Vec3 {
-    const SKY_BLUE: Vec3 = Vec3 {
-        x: 0.5,
-        y: 0.7,
-        z: 1.0,
-    };
-    const SKY_WHITE: Vec3 = Vec3 {
-        x: 1.,
-        y: 1.,
-        z: 1.,
-    };
-
-    // Take the y (from -1 to +1) and map it to 0..1
-    let t = 0.5 * (dir.y + 1.0);
-    (1. - t) * SKY_WHITE + t * SKY_BLUE
-}
-
-fn heighmap_scene() -> Scene<'static> {
+fn heighmap_scene() -> Scene {
     let mut scene = Scene::new();
 
-    scene.set_environment(sky_color);
+    scene.set_environment(SkyEnv::default());
     let light = scene.add_material(EmissiveMat::with_color(Vec3::broadcast(8.)));
     scene.add_object(
         RenderObject::new(YZRect::new(0., 20., 0., 10., -3., light))
