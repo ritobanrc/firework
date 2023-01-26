@@ -1,14 +1,16 @@
 use firework::camera::CameraSettings;
 use firework::environment::SkyEnv;
-use firework::material::MetalMat;
+use firework::material::{EmissiveMat, LambertianMat};
 use firework::objects::TriangleMesh;
+use firework::objects::{XZRect, YZRect};
 use firework::render::Renderer;
 use firework::scene::{MaterialIdx, RenderObject, Scene};
+use firework::texture::ConstantTexture;
 use firework::window::RenderWindow;
 use std::convert::AsRef;
 use std::fmt;
 use std::path::Path;
-use ultraviolet::Vec3;
+use ultraviolet::{Rotor3, Vec3};
 
 pub fn add_obj<P>(scene: &mut Scene, file_name: P, material: MaterialIdx)
 where
@@ -26,29 +28,11 @@ where
         println!("model[{}].mesh.material_id = {:?}", i, mesh.material_id);
 
         println!("Size of model[{}].indices: {}", i, mesh.indices.len());
-        //for f in 0..mesh.indices.len() / 3 {
-        //println!(
-        //"    idx[{}] = {}, {}, {}.",
-        //f,
-        //mesh.indices[3 * f],
-        //mesh.indices[3 * f + 1],
-        //mesh.indices[3 * f + 2]
-        //);
-        //}
 
         // Normals and texture coordinates are also loaded, but not printed in this exampl
         // e
         println!("model[{}].vertices: {}", i, mesh.positions.len() / 3);
         assert!(mesh.positions.len() % 3 == 0);
-        //for v in 0..mesh.positions.len() / 3 {
-        //println!(
-        //"    v[{}] = ({}, {}, {})",
-        //v,
-        //mesh.positions[3 * v],
-        //mesh.positions[3 * v + 1],
-        //mesh.positions[3 * v + 2]
-        //);
-        //}
 
         let triangle_mesh = TriangleMesh::new(
             mesh.positions
@@ -61,7 +45,6 @@ where
             material,
         )
         .unwrap();
-        //scene.add_mesh(triangle_mesh);
 
         scene.add_object(RenderObject::new(triangle_mesh));
     }
@@ -70,9 +53,24 @@ where
 fn teapot_scene() -> Scene {
     let mut scene = Scene::new();
 
-    let diffuse = scene.add_material(MetalMat::new(Vec3::broadcast(0.8), 0.3));
+    let diffuse = scene.add_material(LambertianMat::new(ConstantTexture::new(Vec3::new(
+        0.2, 0.8, 0.3,
+    ))));
     add_obj(&mut scene, "teapot.obj", diffuse);
+
     scene.set_environment(SkyEnv::default());
+
+    let grey = scene.add_material(LambertianMat::with_color(Vec3::broadcast(0.5)));
+    scene.add_object(RenderObject::new(XZRect::new(
+        -100., 100., -100., 100., 0., grey,
+    )));
+
+    let light = scene.add_material(EmissiveMat::with_color(Vec3::broadcast(20.)));
+    scene.add_object(
+        RenderObject::new(YZRect::new(0., 20., 0., 20., -3., light))
+            .rotate(Rotor3::from_rotation_xz(-30.))
+            .position(0., 20., 50.),
+    );
 
     scene
 }
@@ -86,15 +84,14 @@ fn main() {
         .unwrap();
 
     let camera = CameraSettings::default()
-        .cam_pos(Vec3::new(0., 30., 50.))
-        //.look_at(Vec3::new(0., 0., 0.))
-        .look_at(Vec3::new(0., 0., 0.))
+        .cam_pos(Vec3::new(5., 20., 40.))
+        .look_at(Vec3::new(0., 3., 0.))
         .field_of_view(40.);
 
     let renderer = Renderer::default()
         .width(960)
         .height(540)
-        .samples(32)
+        .samples(512)
         .use_bvh(true)
         .camera(camera);
 
