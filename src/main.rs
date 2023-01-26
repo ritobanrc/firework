@@ -1,4 +1,4 @@
-use firework::{camera::CameraSettings, RenderWindow, Renderer, Scene};
+use firework::{camera::CameraSettings, window::save_image, RenderWindow, Renderer, Scene};
 use std::path::PathBuf;
 use structopt::StructOpt;
 use ultraviolet::Vec3;
@@ -14,6 +14,9 @@ struct Opt {
 
     #[structopt(short, long)]
     samples: usize,
+
+    #[structopt(short, long)]
+    output: Option<PathBuf>,
 }
 
 fn main() -> serde_yaml::Result<()> {
@@ -47,9 +50,13 @@ fn main() -> serde_yaml::Result<()> {
         .map(|x| x.as_str())
         .unwrap_or("Firework Render");
 
-    let window = RenderWindow::new(name, Default::default(), renderer.width, renderer.height);
-
-    window.display(&render);
+    if let Some(output) = opt.output {
+        println!("Saving image to {:?}", output);
+        save_image(&render, output, renderer.width, renderer.height)
+    } else {
+        let window = RenderWindow::new(name, Default::default(), renderer.width, renderer.height);
+        window.display(&render);
+    }
 
     Ok(())
 }

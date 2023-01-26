@@ -103,7 +103,7 @@ fn main() {
     println!("Finished Rendering in {} s", (end - start).as_secs());
 
     let window = RenderWindow::new(
-        "heightmap",
+        "teapot",
         Default::default(),
         renderer.width,
         renderer.height,
