@@ -171,7 +171,6 @@ materials:
         x: 8.0
         y: 8.0
         z: 8.0
-meshes: []
 environment:
   environment: SkyEnv
   zenith_color:

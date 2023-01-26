@@ -1,6 +1,6 @@
-#![feature(array_value_iter)]
 #![feature(exclusive_range_pattern)]
-#![feature(const_generics)]
+#![feature(generic_const_exprs)]
+#![feature(adt_const_params)]
 #![allow(incomplete_features)]
 
 mod aabb;

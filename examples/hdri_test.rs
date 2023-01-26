@@ -112,9 +112,9 @@ fn main() {
         .look_at(Vec3::zero());
 
     let renderer = Renderer::default()
-        .width(200)
-        .height(100)
-        .samples(50000)
+        .width(500)
+        .height(250)
+        .samples(500)
         .camera(camera);
 
     let render = renderer.render(scene);

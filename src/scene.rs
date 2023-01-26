@@ -1,7 +1,6 @@
 use crate::aabb::AABB;
 use crate::environment::{ColorEnv, Environment};
 use crate::material::Material;
-use crate::objects::TriangleMesh;
 use crate::ray::Ray;
 use crate::render::{Hitable, RaycastHit};
 use crate::serde_compat::SerializableShape;
@@ -21,7 +20,6 @@ pub type RenderObjectIdx = usize;
 pub struct Scene {
     pub render_objects: Vec<RenderObject>,
     pub materials: Vec<Box<dyn Material + 'static>>, // TODO: Remove the layer of indirection here
-    pub meshes: Vec<TriangleMesh>,
     pub environment: Box<dyn Environment + 'static>,
 }
 
@@ -35,7 +33,6 @@ impl Scene {
         Scene {
             render_objects: Vec::new(),
             materials: Vec::new(),
-            meshes: Vec::new(),
             environment: Box::new(ColorEnv::default()),
         }
     }
@@ -113,22 +110,21 @@ impl SceneInternal {
 
 impl From<Scene> for SceneInternal {
     fn from(scene: Scene) -> Self {
-        let mut render_objects: Vec<_> =
-            scene.render_objects.into_iter().map(|x| x.into()).collect();
+        let render_objects: Vec<_> = scene.render_objects.into_iter().map(|x| x.into()).collect();
 
-        render_objects.extend(scene.meshes.into_iter().map(|m| {
-            use crate::serde_compat::AsHitable;
-            let obj = AsHitable::to_hitable(Box::new(m));
-            let aabb = obj.bounding_box();
-            RenderObjectInternal {
-                obj,
-                position: Vec3::zero(),
-                rotation_mat: Mat3::identity(),
-                inv_rotation_mat: Mat3::identity(),
-                flip_normals: false,
-                aabb,
-            }
-        }));
+        //render_objects.extend(scene.meshes.into_iter().map(|m| {
+        //use crate::serde_compat::AsHitable;
+        //let obj = AsHitable::to_hitable(Box::new(m));
+        //let aabb = obj.bounding_box();
+        //RenderObjectInternal {
+        //obj,
+        //position: Vec3::zero(),
+        //rotation_mat: Mat3::identity(),
+        //inv_rotation_mat: Mat3::identity(),
+        //flip_normals: false,
+        //aabb,
+        //}
+        //}));
 
         SceneInternal {
             render_objects,

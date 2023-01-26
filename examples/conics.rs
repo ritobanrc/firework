@@ -79,9 +79,6 @@ fn main() {
     file.write_all(serde_yaml::to_string(&scene).unwrap().as_bytes())
         .unwrap();
 
-    let mut _a = String::new();
-    std::io::stdin().read_line(&mut _a).unwrap();
-
     let file = std::fs::File::open("scenes/conics.yml").unwrap();
     let scene: Scene = serde_yaml::from_reader(file).unwrap();
 

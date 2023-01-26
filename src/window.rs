@@ -4,17 +4,17 @@ use minifb::{Key, Window, WindowOptions};
 use std::convert::AsRef;
 use std::path::Path;
 
-pub struct RenderWindow {
-    title: &'static str,
+pub struct RenderWindow<'a> {
+    title: &'a str,
     options: WindowOptions,
     width: usize,
     height: usize,
     fps: u64,
 }
 
-impl RenderWindow {
+impl<'a> RenderWindow<'a> {
     pub fn new(
-        title: &'static str,
+        title: &'a str,
         options: WindowOptions,
         width: usize,
         height: usize,
@@ -60,10 +60,7 @@ pub fn save_image<P>(render: &[Color], path: P, width: usize, height: usize)
 where
     P: AsRef<Path>,
 {
-    let new_buf: Vec<u8> = render
-        .iter()
-        .flat_map(|&x| std::array::IntoIter::new([x.0, x.1, x.2]))
-        .collect();
+    let new_buf: Vec<u8> = render.iter().flat_map(|&x| [x.0, x.1, x.2]).collect();
     save_buffer(path, &new_buf, width as u32, height as u32, ColorType::Rgb8)
         .expect("Failed to save");
 }

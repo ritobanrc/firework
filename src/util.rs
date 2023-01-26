@@ -84,9 +84,9 @@ impl Axis {
     #[inline(always)]
     pub fn other(a: Axis, b: Axis) -> Axis {
         match (a, b) {
-            (Axis::X, Axis::Y) | (Axis::Y, Axis::X) => (Axis::Z),
-            (Axis::Y, Axis::Z) | (Axis::Z, Axis::Y) => (Axis::X),
-            (Axis::X, Axis::Z) | (Axis::Z, Axis::X) => (Axis::Y),
+            (Axis::X, Axis::Y) | (Axis::Y, Axis::X) => Axis::Z,
+            (Axis::Y, Axis::Z) | (Axis::Z, Axis::Y) => Axis::X,
+            (Axis::X, Axis::Z) | (Axis::Z, Axis::X) => Axis::Y,
             _ => panic!("Axis::other called, but a == b"),
         }
     }

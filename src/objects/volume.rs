@@ -15,7 +15,7 @@ pub struct ConstantMedium<T> {
 }
 
 impl ConstantMedium<Box<dyn SerializableShape>> {
-    pub(crate) fn new<T: SerializableShape + 'static>(
+    pub(crate) fn _new<T: SerializableShape + 'static>(
         obj: T,
         density: f32,
         material: crate::scene::MaterialIdx,
