@@ -316,7 +316,7 @@ impl RenderObject {
         self
     }
 
-    /// Sets the rotation of the `RenderObject` on the Y Axis
+    /// Sets the rotation of the `RenderObject`
     #[inline(always)]
     pub fn rotate(mut self, rotor: Rotor3) -> Self {
         self.rotation = rotor;

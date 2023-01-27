@@ -1,3 +1,5 @@
+#![feature(array_chunks)]
+
 use firework::camera::CameraSettings;
 use firework::environment::SkyEnv;
 use firework::material::{EmissiveMat, LambertianMat};
@@ -34,19 +36,30 @@ where
         println!("model[{}].vertices: {}", i, mesh.positions.len() / 3);
         assert!(mesh.positions.len() % 3 == 0);
 
+        let normals = if !mesh.normals.is_empty() {
+            Some(
+                mesh.normals
+                    .array_chunks::<3>()
+                    .map(|x| Vec3::from(x))
+                    .collect(),
+            )
+        } else {
+            None
+        };
+
         let triangle_mesh = TriangleMesh::new(
             mesh.positions
                 .chunks(3)
                 .map(|arr| Vec3::new(arr[0], arr[1], arr[2]))
                 .collect(),
             mesh.indices.iter().map(|x| *x as usize).collect(),
-            None,
+            normals,
             None,
             material,
         )
         .unwrap();
 
-        scene.add_object(RenderObject::new(triangle_mesh));
+        scene.add_object(RenderObject::new(triangle_mesh).rotate(Rotor3::from_rotation_xz(90.)));
     }
 }
 
@@ -62,14 +75,14 @@ fn teapot_scene() -> Scene {
 
     let grey = scene.add_material(LambertianMat::with_color(Vec3::broadcast(0.5)));
     scene.add_object(RenderObject::new(XZRect::new(
-        -100., 100., -100., 100., 0., grey,
+        -20., 20., -20., 20., 0., grey,
     )));
 
     let light = scene.add_material(EmissiveMat::with_color(Vec3::broadcast(20.)));
     scene.add_object(
-        RenderObject::new(YZRect::new(0., 20., 0., 20., -3., light))
+        RenderObject::new(YZRect::new(0., 4., 0., 4., -0.6, light))
             .rotate(Rotor3::from_rotation_xz(-30.))
-            .position(0., 20., 50.),
+            .position(0., 4., 10.),
     );
 
     scene
@@ -84,13 +97,13 @@ fn main() {
         .unwrap();
 
     let camera = CameraSettings::default()
-        .cam_pos(Vec3::new(5., 20., 40.))
-        .look_at(Vec3::new(0., 3., 0.))
+        .cam_pos(Vec3::new(1., 4., 8.))
+        .look_at(Vec3::new(0., 1., 0.))
         .field_of_view(40.);
 
     let renderer = Renderer::default()
-        .width(960)
-        .height(540)
+        .width(1920)
+        .height(1080)
         .samples(512)
         .use_bvh(true)
         .camera(camera);

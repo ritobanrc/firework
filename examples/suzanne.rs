@@ -84,7 +84,7 @@ fn main() {
         .unwrap();
 
     let camera = CameraSettings::default()
-        .cam_pos(Vec3::new(1., 5., 10.))
+        .cam_pos(Vec3::new(1., 2.5, 5.))
         .look_at(Vec3::new(0., 0., 0.))
         .field_of_view(40.);
 

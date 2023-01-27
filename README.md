@@ -10,7 +10,6 @@ Major changes
 - Explicitly passing around Rng object for reproducibility and to prevent side effects
 - Separating things out into modules. 
 - Using const_generics to avoid code duplication in Rectangles
-- Not using separate `emit` and `scatter functions`
 
 ![Part 2 Final Render](part2_final.png)
 
